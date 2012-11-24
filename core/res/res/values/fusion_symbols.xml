@@ -264,4 +264,8 @@
   <java-symbol type="anim" name="recent_screen_enter_left" />
   <java-symbol type="anim" name="recent_screen_fade_out" />
 
+<!-- AOKP symbols for service -->
+  <java-symbol type="string" name="notify_turn_wifi_off_title" />
+  <java-symbol type="drawable" name="ic_stat_turn_wifi_off" />
+
 </resources>
