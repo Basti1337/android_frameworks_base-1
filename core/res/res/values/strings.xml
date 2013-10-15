@@ -2,6 +2,9 @@
 <!--
 /* //device/apps/common/assets/res/any/strings.xml
 **
+** Copyright (c) 2013, The Linux Foundation. All rights reserved.
+** Not a Contribution.
+**
 ** Copyright 2006, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -4523,4 +4526,5 @@
     <!-- Cling help message when hiding the navigation bar entering immersive mode [CHAR LIMIT=none] -->
     <string name="immersive_mode_confirmation" msgid="8554991488096662508">Swipe down from the top to exit full screen.</string>
 
+    <string name="permission">Permission</string>
 </resources>
