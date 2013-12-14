@@ -406,6 +406,21 @@
             </intent-filter>
         </activity>
 
+        <!-- extremely secret launcher shortcut -->
+        <activity
+            android:name="com.android.systemui.shortcuts.ChamberOfSecrets"
+            android:label="@string/shortcut_chamber"
+            android:icon="@drawable/ic_qs_reboot_recovery"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="com.android.systemui.SHORTCUT" />
+                <category android:name="com.android.systemui.SHORTCUT_EXTRA" />
+            </intent-filter>
+        </activity>
+
         <!-- platform logo easter egg activity -->
         <activity
             android:name=".DessertCase"
