@@ -184,4 +184,8 @@
     <string name="quick_settings_reminder_dismiss_message">Clear current reminder?</string>
     <string name="quick_settings_reminder_help_title">Touch:</string>
     <string name="quick_settings_reminder_help_message">Touch here to set a reminder. Long-press to clear the current reminder.</string>
+
+    <!-- Active Display -->
+    <string name="active_display_privacy_content">Content message not showing because privacy mode enabled</string>
+
 </resources>
