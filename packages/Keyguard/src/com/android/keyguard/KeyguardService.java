@@ -156,6 +156,9 @@ public class KeyguardService extends Service {
         public void setBackgroundBitmap(Bitmap bmp) {
             mKeyguardViewMediator.setBackgroundBitmap(bmp);
         }
+        public void setWallpaper(Bitmap bmp) {
+            mKeyguardViewMediator.setWallpaper(bmp);
+        }
     };
 
 }
