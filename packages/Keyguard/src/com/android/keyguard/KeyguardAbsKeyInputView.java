@@ -127,16 +127,6 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
         mPasswordEntry.setOnEditorActionListener(this);
         mPasswordEntry.addTextChangedListener(this);
 		
-        if (Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
-            mPasswordEntry.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return mDoubleTapGesture.onTouchEvent(event);
-                }
-            });
-        }
-
         // Set selected property on so the view can send accessibility events.
         mPasswordEntry.setSelected(true);
 
@@ -146,6 +136,16 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
                 mCallback.userActivity(0); // TODO: customize timeout for text?
             }
         });
+		
+        if (Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
+            mPasswordEntry.setOnTouchListener(new OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return mDoubleTapGesture.onTouchEvent(event);
+                }
+            });
+        }
 
         mQuickUnlock = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_QUICK_UNLOCK_CONTROL, 0) == 1);
