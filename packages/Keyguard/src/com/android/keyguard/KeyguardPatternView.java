@@ -91,7 +91,7 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
     private View mEcaView;
     private Drawable mBouncerFrame;
 	
-	private GestureDetector mDoubleTapGesture;
+    private GestureDetector mDoubleTapGesture;
 
     enum FooterMode {
         Normal,
@@ -121,12 +121,6 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
         mLockPatternUtils = mLockPatternUtils == null
                 ? new LockPatternUtils(mContext) : mLockPatternUtils;
 				
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
-        mLockPatternUtils = mLockPatternUtils == null
-                ? new LockPatternUtils(mContext) : mLockPatternUtils;
-
         mDoubleTapGesture = new GestureDetector(mContext,
                 new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -136,6 +130,7 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
                 return true;
             }
         });
+
 
         mLockPatternView = (LockPatternView) findViewById(R.id.lockPatternView);
         mLockPatternView.setSaveEnabled(false);
