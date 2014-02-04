@@ -24,6 +24,7 @@ import android.graphics.Point;
 import android.os.Debug;
 import android.os.Handler;
 import android.os.IRemoteCallback;
+import android.os.UserHandle;
 import android.provider.Settings;
 import android.util.Slog;
 import android.view.WindowManager;
@@ -898,12 +899,15 @@ public class AppTransition implements Dump {
     private void updateSettings() {
         ContentResolver resolver = mContext.getContentResolver();
         for (int i = 0; i < 10; i++) {  
-            mActivityAnimations[i] = Settings.System.getInt(resolver, Settings.System.ACTIVITY_ANIMATION_CONTROLS[i], 0);
+            mActivityAnimations[i] = Settings.System.getInt(resolver,
+                 Settings.System.ACTIVITY_ANIMATION_CONTROLS[i], 0);
         }
 
-        mNoOverrides = Settings.System.getBoolean(resolver, Settings.System.ANIMATION_CONTROLS_NO_OVERRIDE, false);
+        mNoOverrides = Settings.System.getBoolean(resolver,
+                 Settings.System.ANIMATION_CONTROLS_NO_OVERRIDE, false);
 
-        int temp = Settings.System.getInt(resolver, Settings.System.ANIMATION_CONTROLS_DURATION, 0);
+        int temp = Settings.System.getInt(resolver,
+                 Settings.System.ANIMATION_CONTROLS_DURATION, 0);
         mAnimationDuration = temp * 15;
     }
 }
