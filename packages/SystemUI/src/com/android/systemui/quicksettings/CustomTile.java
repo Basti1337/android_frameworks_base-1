@@ -86,6 +86,7 @@ public class CustomTile extends QuickSettingsTile {
         super(context, qsc);
 
         mKey = key;
+        mGenericCollapse = false;
         mQsc = qsc;
         mShared = mContext.getSharedPreferences(KEY_TOGGLE_STATE, Context.MODE_PRIVATE);
         // This will naver change and will filter itself out if an action exists
