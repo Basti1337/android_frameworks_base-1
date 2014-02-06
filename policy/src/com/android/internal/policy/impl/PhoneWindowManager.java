@@ -133,6 +133,7 @@ import com.android.internal.util.fusion.Converter;
 import com.android.internal.util.fusion.HwKeyHelper;
 import com.android.internal.util.fusion.SlimActions;
 import com.android.internal.util.fusion.TorchConstants;
+import com.android.internal.util.gesture.EdgeGesturePosition;
 
 import com.android.internal.widget.PointerLocationView;
 
@@ -3632,6 +3633,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 // it to bubble up from the nav bar, because this needs to
                 // change atomically with screen rotations.
                 mNavigationBarOnBottom = (!mNavigationBarCanMove || displayWidth < displayHeight);
+                setPieTriggerMask(displayWidth < displayHeight);
                 if (mNavigationBarOnBottom) {
                     // It's a system nav bar or a portrait screen; nav bar goes on bottom.
                     int top = displayHeight - overscanBottom - mNavigationBarHeightForRotation[displayRotation];
@@ -3767,6 +3769,37 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             if (updateSysUiVisibility) {
                 updateSystemUiVisibilityLw();
             }
+        }
+    }
+
+    private void setPieTriggerMask(boolean isPortrait) {
+        int newMask = EdgeGesturePosition.LEFT.FLAG;
+        if (mHasNavigationBar) {
+            if (mNavigationBarOnBottom) {
+                newMask |= EdgeGesturePosition.RIGHT.FLAG;
+                if (isPortrait && mNavigationBarHeight == 0
+                        || !isPortrait && mNavigationBarHeightLandscape == 0) {
+                    newMask |= EdgeGesturePosition.BOTTOM.FLAG;
+                }
+            } else {
+                newMask |= EdgeGesturePosition.BOTTOM.FLAG;
+                if (mNavigationBarWidth == 0) {
+                    newMask |= EdgeGesturePosition.RIGHT.FLAG;
+                }
+            }
+        } else {
+            newMask |= EdgeGesturePosition.RIGHT.FLAG
+                    | EdgeGesturePosition.BOTTOM.FLAG;
+        }
+        try {
+            IStatusBarService statusbar = getStatusBarService();
+            if (statusbar != null) {
+                statusbar.setPieTriggerMask(newMask, false);
+            }
+        } catch (RemoteException e) {
+            Slog.e(TAG, "RemoteException when updating PIE trigger mask", e);
+            // Re-acquire status bar service next time it is needed.
+            mStatusBarService = null;
         }
     }
 
