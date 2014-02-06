@@ -137,6 +137,7 @@
     <string name="quick_settings_quick_record_play">Playing...</string>
     <string name="quick_settings_custom_toggle">Custom</string>
     <string name="quick_settings_contact_toggle">Contact</string>
+    <string name="quick_settings_fcharge">Fast charge</string>
 
     <!-- App sidebar -->
     <string name="default_folder_text">Folder</string>
