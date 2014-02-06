@@ -62,7 +62,6 @@ public class BatteryMeterView extends View implements DemoMode {
     public static final int BATTERY_STYLE_CIRCLE_PERCENT        = 4;
     public static final int BATTERY_STYLE_DOTTED_CIRCLE         = 5;
     public static final int BATTERY_STYLE_DOTTED_CIRCLE_PERCENT = 6;
-    public static final int BATTERY_STYLE_GONE                  = 7;
 
     private static final int OPAQUE_MASK = 0xff000000;
     private static final int FRAME_MASK = 0x66000000;
@@ -440,22 +439,6 @@ public class BatteryMeterView extends View implements DemoMode {
 
         mBatteryStyle = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_BATTERY, 0, UserHandle.USER_CURRENT);
-
-        boolean disableStatusBarInfo = Settings.System.getInt(resolver,
-                Settings.System.PIE_DISABLE_STATUSBAR_INFO, 0) == 1;
-        if (disableStatusBarInfo) {
-            // call only the settings if statusbar info is really hidden
-            int pieMode = Settings.System.getInt(resolver,
-                    Settings.System.PIE_CONTROLS, 0);
-            boolean expandedDesktopState = Settings.System.getInt(resolver,
-                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
-
-            if (pieMode == 2
-                || pieMode == 1 && expandedDesktopState) {
-                mBatteryStyle = BATTERY_STYLE_GONE;
-            }
-        }
-
         mBatteryColor = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_BATTERY_COLOR, -2, UserHandle.USER_CURRENT);
         mPercentageColor = Settings.System.getIntForUser(resolver,

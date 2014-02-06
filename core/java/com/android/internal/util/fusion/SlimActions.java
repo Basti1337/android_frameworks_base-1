@@ -216,8 +216,7 @@ public class SlimActions {
                 } catch (RemoteException e) {
                 }
                 return;
-            } else if (action.equals(ButtonsConstants.ACTION_ASSIST)
-                    || action.equals(ButtonsConstants.ACTION_KEYGUARD_SEARCH)) {
+            } else if (action.equals(ButtonsConstants.ACTION_ASSIST)) {
                 Intent intent = ((SearchManager) context.getSystemService(Context.SEARCH_SERVICE))
                   .getAssistIntent(context, true, UserHandle.USER_CURRENT);
                 if (intent == null) {

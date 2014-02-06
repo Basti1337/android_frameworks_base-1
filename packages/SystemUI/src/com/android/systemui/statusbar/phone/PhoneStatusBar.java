@@ -537,10 +537,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.APP_SIDEBAR_POSITION), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PIE_DISABLE_STATUSBAR_INFO),
-                    false, this, UserHandle.USER_ALL);
-
             update();
         }
 
@@ -678,7 +674,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
             updateBatteryIcons();
             updateCustomHeaderStatus();
-            showClock(true);
 
             int signalStyle = Settings.System.getInt(resolver, 
                 Settings.System.STATUS_BAR_SIGNAL_TEXT, SignalClusterView.STYLE_NORMAL);
@@ -889,7 +884,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
             mNavigationBarView.setDisabledFlags(mDisabled);
             mNavigationBarView.setBar(this);
-            addNavigationBarCallback(mNavigationBarView);
             mNavigationBarView.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
@@ -2035,20 +2029,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     public void showClock(boolean show) {
         if (mStatusBarView == null) return;
         ContentResolver resolver = mContext.getContentResolver();
-        boolean disableStatusBarInfo = Settings.System.getInt(resolver,
-                Settings.System.PIE_DISABLE_STATUSBAR_INFO, 0) == 1;
-        if (disableStatusBarInfo) {
-            // call only the settings if statusbar info is really hidden
-            int pieMode = Settings.System.getInt(resolver,
-                    Settings.System.PIE_CONTROLS, 0);
-            boolean expandedDesktopState = Settings.System.getInt(resolver,
-                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
-
-            if (pieMode == 2
-                || pieMode == 1 && expandedDesktopState) {
-                show = false;
-            }
-        }
         View clock = mStatusBarView.findViewById(R.id.clock);
         View cclock = mStatusBarView.findViewById(R.id.center_clock);
         boolean showClock = (Settings.System.getIntForUser(
@@ -2139,8 +2119,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                         | StatusBarManager.DISABLE_RECENT
                         | StatusBarManager.DISABLE_BACK
                         | StatusBarManager.DISABLE_SEARCH)) != 0) {
-            // all navigation bar listeners will take care of these
-            propagateDisabledFlags(state);
+            // the nav bar will take care of these
+            if (mNavigationBarView != null) mNavigationBarView.setDisabledFlags(state);
 
             if ((state & StatusBarManager.DISABLE_RECENT) != 0) {
                 // close recents if it's visible
@@ -2880,7 +2860,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         mNavigationIconHints = hints;
 
-        propagateNavigationIconHints(hints);
+        if (mNavigationBarView != null) {
+            mNavigationBarView.setNavigationIconHints(hints);
+        }
         checkBarModes();
     }
 
@@ -3145,18 +3127,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         if (DEBUG) {
             Log.d(TAG, (showMenu?"showing":"hiding") + " the MENU button");
         }
-        propagateMenuVisibility(showMenu);
-
-        // hide pie triggers when keyguard is visible
-        try {
-            if (mWindowManagerService.isKeyguardLocked()
-                && (mDisabled & View.STATUS_BAR_DISABLE_HOME) != 0) {
-                keyguardTriggers(true);
-            } else {
-                keyguardTriggers(false);
-            }
-        } catch (RemoteException e) {
-            // nothing else to do ...
+        if (mNavigationBarView != null) {
+            mNavigationBarView.setMenuVisibility(showMenu);
         }
 
         // See above re: lights-out policy for legacy apps.

@@ -53,7 +53,7 @@ public class KeyButtonView extends ImageView {
     private static final boolean DEBUG = false;
 
     final float GLOW_MAX_SCALE_FACTOR = 1.8f;
-    public static float mButtonAlpha = 0.70f;
+    public static final float DEFAULT_QUIESCENT_ALPHA = 0.70f;
 
     String mClickAction;
     String mLongpressAction;
@@ -64,6 +64,8 @@ public class KeyButtonView extends ImageView {
     float mGlowAlpha = 0f, mGlowScale = 1f;
     @ViewDebug.ExportedProperty(category = "drawing")
     float mDrawingAlpha = 1f;
+    @ViewDebug.ExportedProperty(category = "drawing")
+    float mQuiescentAlpha = DEFAULT_QUIESCENT_ALPHA;
     boolean mSupportsLongpress = false;
     boolean mIsLongpressed = false;
     RectF mRect = new RectF();
@@ -101,9 +103,8 @@ public class KeyButtonView extends ImageView {
         mSupportsLongpress = a.getBoolean(R.styleable.KeyButtonView_keyRepeat, true);
 
         mGlowBG = a.getDrawable(R.styleable.KeyButtonView_glowBackground);
-        setDrawingAlpha(mButtonAlpha);
+        setDrawingAlpha(mQuiescentAlpha);
         if (mGlowBG != null) {
-            setDrawingAlpha(mButtonAlpha);
             mGlowWidth = mGlowBG.getIntrinsicWidth();
             mGlowHeight = mGlowBG.getIntrinsicHeight();
         }
@@ -130,7 +131,7 @@ public class KeyButtonView extends ImageView {
     public void setGlowBackground(int id) {
         mGlowBG = getResources().getDrawable(id);
         if (mGlowBG != null) {
-            setDrawingAlpha(mButtonAlpha);
+            setDrawingAlpha(mQuiescentAlpha);
             mGlowWidth = mGlowBG.getIntrinsicWidth();
             mGlowHeight = mGlowBG.getIntrinsicHeight();
             int defaultColor = mContext.getResources().getColor(
@@ -172,23 +173,23 @@ public class KeyButtonView extends ImageView {
     public void setQuiescentAlpha(float alpha, boolean animate) {
         mAnimateToQuiescent.cancel();
         alpha = Math.min(Math.max(alpha, 0), 1);
-        if (alpha == mButtonAlpha && alpha == mDrawingAlpha) return;
-        mButtonAlpha = alpha;
-        if (DEBUG) Log.d(TAG, "New quiescent alpha = " + mButtonAlpha);
+        if (alpha == mQuiescentAlpha && alpha == mDrawingAlpha) return;
+        mQuiescentAlpha = alpha;
+        if (DEBUG) Log.d(TAG, "New quiescent alpha = " + mQuiescentAlpha);
         if (mGlowBG != null && animate) {
             mAnimateToQuiescent = animateToQuiescent();
             mAnimateToQuiescent.start();
         } else {
-            setDrawingAlpha(mButtonAlpha);
+            setDrawingAlpha(mQuiescentAlpha);
         }
     }
 
     private ObjectAnimator animateToQuiescent() {
-        return ObjectAnimator.ofFloat(this, "drawingAlpha", mButtonAlpha);
+        return ObjectAnimator.ofFloat(this, "drawingAlpha", mQuiescentAlpha);
     }
 
     public float getQuiescentAlpha() {
-        return mButtonAlpha;
+        return mQuiescentAlpha;
     }
 
     public float getDrawingAlpha() {
@@ -253,8 +254,8 @@ public class KeyButtonView extends ImageView {
                 if (pressed) {
                     if (mGlowScale < GLOW_MAX_SCALE_FACTOR)
                         mGlowScale = GLOW_MAX_SCALE_FACTOR;
-                    if (mGlowAlpha < mButtonAlpha)
-                        mGlowAlpha = mButtonAlpha;
+                    if (mGlowAlpha < mQuiescentAlpha)
+                        mGlowAlpha = mQuiescentAlpha;
                     setDrawingAlpha(1f);
                     as.playTogether(
                         ObjectAnimator.ofFloat(this, "glowAlpha", 1f),
@@ -267,7 +268,7 @@ public class KeyButtonView extends ImageView {
                     as.playTogether(
                         ObjectAnimator.ofFloat(this, "glowAlpha", 0f),
                         ObjectAnimator.ofFloat(this, "glowScale", 1f),
-                        ObjectAnimator.ofFloat(this, "drawingAlpha", mButtonAlpha)
+                        mAnimateToQuiescent
                     );
                     as.setDuration(500);
                 }
