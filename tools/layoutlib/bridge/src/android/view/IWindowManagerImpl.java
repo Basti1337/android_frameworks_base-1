@@ -508,4 +508,9 @@ public class IWindowManagerImpl implements IWindowManager {
     @Override
     public void toggleGlobalMenu() {
     }
+
+    /* @hide */
+    @Override
+    public void toggleStatusBar() {
+    }
 }
