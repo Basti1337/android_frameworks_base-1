@@ -108,7 +108,7 @@ public final class NavigationBarTransitions extends BarTransitions {
 
     private float alphaForMode(int mode) {
         final boolean isOpaque = mode == MODE_OPAQUE || mode == MODE_LIGHTS_OUT;
-        return isOpaque ? KeyButtonView.mButtonAlpha : 1f;
+        return isOpaque ? KeyButtonView.DEFAULT_QUIESCENT_ALPHA : 1f;
     }
 
     public void applyBackButtonQuiescentAlpha(int mode, boolean animate) {

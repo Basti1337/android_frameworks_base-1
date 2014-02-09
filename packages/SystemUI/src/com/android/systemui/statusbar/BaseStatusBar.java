@@ -105,6 +105,7 @@ import com.android.systemui.SearchPanelView;
 import com.android.systemui.SystemUI;
 import com.android.systemui.statusbar.halo.Halo;
 import com.android.systemui.statusbar.phone.KeyguardTouchDelegate;
+import com.android.systemui.statusbar.phone.NavigationBarOverlay;
 import com.android.systemui.statusbar.phone.PhoneStatusBar;
 import com.android.systemui.statusbar.pie.PieLayout;
 import com.android.systemui.statusbar.policy.activedisplay.ActiveDisplayView;
@@ -227,6 +228,7 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     // Pie Control
     protected PieController mPieController;
+    public NavigationBarOverlay mNavigationBarOverlay;
     protected PieLayout mPieContainer;
     private int mPieTriggerSlots;
     public int mPieTriggerMask = Position.LEFT.FLAG
@@ -551,6 +553,7 @@ public abstract class BaseStatusBar extends SystemUI implements
                    ));
         }
 
+        mNavigationBarOverlay = new NavigationBarOverlay();
         mCurrentUserId = ActivityManager.getCurrentUser();
 
         IntentFilter filter = new IntentFilter();
