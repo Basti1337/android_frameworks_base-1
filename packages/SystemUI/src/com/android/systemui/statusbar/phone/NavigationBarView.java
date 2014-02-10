@@ -1066,15 +1066,6 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
 
     }
 
-    public void setForgroundColor(Drawable drawable) {
-        if (mRot0 != null) {
-            mRot0.setForeground(drawable);
-        }
-        if (mRot90 != null) {
-            mRot90.setForeground(drawable);
-        }
-    }
-
     public void dump(FileDescriptor fd, PrintWriter pw, String[] args) {
         pw.println("NavigationBarView {");
         final Rect r = new Rect();
