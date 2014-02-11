@@ -149,6 +149,8 @@ public class NotificationViewManager {
                     Settings.System.LOCKSCREEN_NOTIFICATIONS_OFFSET_TOP, offsetTop);
             String excludedApps = Settings.System.getString(mContext.getContentResolver(),
                     Settings.System.LOCKSCREEN_NOTIFICATIONS_EXCLUDED_APPS);
+            notificationColor = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.LOCKSCREEN_NOTIFICATIONS_COLOR, notificationColor);
 
             createExcludedAppsSet(excludedApps);
         }
