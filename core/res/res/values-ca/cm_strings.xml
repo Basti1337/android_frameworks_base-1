@@ -48,7 +48,6 @@
     <string name="permdesc_fm_radio_transmitter">Permet a l\'app controlar el transmissor FM.</string>
     <string name="permlab_sendMockSms">envia missatges SMS simulats</string>
     <string name="permdesc_sendMockSms">Permet a l\'app enviar missatges SMS simulats. Això permet a una app enviar missatges SMS a pps de confiança. Apps malicioses podrien enviar missatges continuament, bloquejant el sistema de notificacions del dispositiu, molestant l\'usuari.</string>
-    <string name="lockscreen_discharging">Descarregant, <xliff:g id="number">%d</xliff:g><xliff:g id="percent">%%</xliff:g></string>
     <string name="progress_nomediapresent" product="default">No hi ha present cap dispositiu extraïble\u2026</string>
     <string name="storage_sd_dock_card">Acopla targeta SD</string>
     <string name="app_killed_message">App matada</string>
@@ -116,6 +115,13 @@
     <string name="privacy_guard_notification_detail"><xliff:g id="app">%1$s</xliff:g> no tindrà accés a dades personals</string>
     <string name="profile_picker_title">Perfils</string>
     <string name="profile_none">Cap</string>
-    <string name="permlab_cancelNotifications">cancel\U00B7la les notificacions de l\'aplicació</string>
-    <string name="permdesc_cancelNotifications">Permet a l\'app cancel\U00B7lar les notificacions creades per altres apps.</string>
+    <string name="perf_profile_pwrsv">Estalvi d\'energia</string>
+    <string name="perf_profile_bal">Equilibrat</string>
+    <string name="perf_profile_perf">Rendiment</string>
+    <string name="permlab_interceptSmsSent">intercepta els SMS sortints</string>
+    <string name="permdesc_interceptSmsSent">Permet a l\'app interceptar un SMS sortint. Apps malicioses podrien utilitzar això per impedir que sortissin missatges SMS.</string>
+    <string name="permlab_resetBatteryStats">reinicia estadítiques de la bateria</string>
+    <string name="permdesc_resetBatteryStats">Permet a una aplicació reiniciar les dades de baix nivell d\'us actual de la bateria.</string>
+    <string name="immersive_mode_confirmation_bottom">Deslliça cap amunt des de baix per sortir de la pantalla sencera.</string>
+<string name="transient_navigation_confirmation_long">Deslliça des de la vora de la pantalla per mostrar la barra de sistema</string>
 </resources>
