@@ -58,6 +58,7 @@ import android.view.WindowManager;
 import android.view.WindowManagerPolicy;
 
 import com.android.internal.telephony.IccCardConstants;
+import com.android.internal.util.fusion.QuietHoursHelper;
 import com.android.internal.widget.LockPatternUtils;
 
 /**
@@ -587,9 +588,9 @@ public class KeyguardViewMediator {
     }
 
     public void setBackgroundBitmap(Bitmap bmp) {
-    	mKeyguardViewManager.setBackgroundBitmap(bmp);
+        mKeyguardViewManager.setBackgroundBitmap(bmp);
     }
-    
+
     /**
      * Let us know that the system is ready after startup.
      */
@@ -1272,6 +1273,10 @@ public class KeyguardViewMediator {
 
         if (mSuppressNextLockSound) {
             mSuppressNextLockSound = false;
+            return;
+        }
+
+        if (QuietHoursHelper.inQuietHours(mContext, Settings.System.QUIET_HOURS_SYSTEM)) {
             return;
         }
 

@@ -63,6 +63,11 @@ public class KeyguardStatusView extends GridLayout {
         }
 
         @Override
+        void onKeyguardVisibilityChanged(boolean showing) {
+            // Do nothing
+        };
+
+        @Override
         public void onScreenTurnedOn() {
             setEnableMarquee(true);
             mEnableRefresh = true;
@@ -153,9 +158,6 @@ public class KeyguardStatusView extends GridLayout {
 
         mContext.getContentResolver().registerContentObserver(
                 Settings.System.getUriFor(Settings.System.TIME_12_24), false, mContentObserver);
-        mContext.getContentResolver().registerContentObserver(
-                Settings.System.getUriFor(Settings.System.NEXT_ALARM_FORMATTED),
-                false, mContentObserver);
     }
 
     @Override
@@ -198,6 +200,7 @@ public class KeyguardStatusView extends GridLayout {
             }
 
             clockView24 = DateFormat.getBestDateTimePattern(locale, clockView24Skel);
+
             cacheKey = key;
         }
     }

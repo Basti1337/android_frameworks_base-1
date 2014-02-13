@@ -103,9 +103,9 @@ final class UiModeManagerService extends IUiModeManager.Stub
 
     private NotificationManager mNotificationManager;
 
-    private SensorManager mSensorManager;
-
     private StatusBarManager mStatusBarManager;
+
+    private SensorManager mSensorManager;
 
     private final PowerManager mPowerManager;
     private final PowerManager.WakeLock mWakeLock;
@@ -345,6 +345,7 @@ final class UiModeManagerService extends IUiModeManager.Stub
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
+
 
     @Override // Binder call
     public void disableCarMode(int flags) {

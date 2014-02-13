@@ -69,8 +69,8 @@ public class NotificationViewManager {
 
     class Configuration extends ContentObserver {
         //User configurable values, set defaults here
-        public boolean showAlways = false;
-        public boolean pocketMode = false;
+        public boolean showAlways = true;
+        public boolean pocketMode = true;
         public boolean hideLowPriority = false;
         public boolean hideNonClearable = false;
         public boolean dismissAll = true;
@@ -113,8 +113,8 @@ public class NotificationViewManager {
                     Settings.System.LOCKSCREEN_NOTIFICATIONS_PRIVACY_MODE), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.LOCKSCREEN_NOTIFICATIONS_EXCLUDED_APPS), false, this);
-            notificationColor = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.LOCKSCREEN_NOTIFICATIONS_COLOR, notificationColor);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.LOCKSCREEN_NOTIFICATIONS_COLOR), false, this);
         }
 
         @Override

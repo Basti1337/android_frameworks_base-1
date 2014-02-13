@@ -150,7 +150,7 @@ public class KeyguardService extends Service {
             mKeyguardViewMediator.onBootCompleted();
         }
         public void setBackgroundBitmap(Bitmap bmp) {
-        	mKeyguardViewMediator.setBackgroundBitmap(bmp);
+            mKeyguardViewMediator.setBackgroundBitmap(bmp);
         }
     };
 
