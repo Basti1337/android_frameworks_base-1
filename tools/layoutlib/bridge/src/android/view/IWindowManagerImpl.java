@@ -20,6 +20,7 @@ import android.graphics.Point;
 import com.android.internal.view.IInputContext;
 import com.android.internal.view.IInputMethodClient;
 
+import android.content.Intent;
 import android.content.res.CompatibilityInfo;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -502,6 +503,31 @@ public class IWindowManagerImpl implements IWindowManager {
     @Override
     public boolean hasMenuKeyEnabled() {
         return true;
+
+    /* @hide */
+    @Override
+    public void showCustomIntentOnKeyguard(Intent intent) {
+    }
+
+    /* @hide */
+    @Override
+    public boolean expandedDesktopHidesNavigationBar() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* @hide */
+    @Override
+    public boolean expandedDesktopHidesStatusBar() {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* @hide */
+    @Override
+    public int getCurrentNavigationBarSize() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 
     /* @hide */
