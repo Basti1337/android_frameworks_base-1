@@ -195,6 +195,9 @@ public class PhoneStatusBarView extends PanelBar {
         }
         mBar.restorePieTriggerMask();
         mBar.setOverwriteImeIsActive(false);
+
+        // show up you pie controls
+        mBar.setupTriggers(false);
     }
 
     @Override
@@ -213,6 +216,8 @@ public class PhoneStatusBarView extends PanelBar {
             mBar.setOverwriteImeIsActive(true);
         }
 
+        // back off you pie controls!
+        mBar.setupTriggers(true);
         mFadingPanel = openPanel;
         mLastFullyOpenedPanel = openPanel;
         mShouldFade = true; // now you own the fade, mister

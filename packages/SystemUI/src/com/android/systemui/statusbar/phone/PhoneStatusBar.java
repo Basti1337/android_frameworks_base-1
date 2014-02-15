@@ -547,6 +547,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.EXPANDED_DESKTOP_STATE), false, this,
                     UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.FUSION_PIE_DISABLE_STATUSBAR_INFO),
+                    false, this, UserHandle.USER_ALL);
+
             update();
         }
 
@@ -690,6 +694,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
             updateBatteryIcons();
             updateCustomHeaderStatus();
+            showClock(true);
 
             int signalStyle = Settings.System.getInt(resolver, 
                 Settings.System.STATUS_BAR_SIGNAL_TEXT, SignalClusterView.STYLE_NORMAL);
@@ -2067,6 +2072,20 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     public void showClock(boolean show) {
         if (mStatusBarView == null) return;
         ContentResolver resolver = mContext.getContentResolver();
+        boolean disableStatusBarInfo = Settings.System.getInt(resolver,
+               Settings.System.FUSION_PIE_DISABLE_STATUSBAR_INFO, 0) == 1;
+        if (disableStatusBarInfo) {
+            // call only the settings if statusbar info is really hidden
+            int FusionPieMode = Settings.System.getInt(resolver,
+                    Settings.System.FUSION_PIE_CONTROLS, 0);
+            boolean expandedDesktopState = Settings.System.getInt(resolver,
+                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
+
+            if (FusionPieMode == 2
+                || FusionPieMode == 1 && expandedDesktopState) {
+                show = false;
+            }
+        }
         View clock = mStatusBarView.findViewById(R.id.clock);
         View cclock = mStatusBarView.findViewById(R.id.center_clock);
         boolean showClock = (Settings.System.getIntForUser(
@@ -3179,6 +3198,18 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
 
         propagateMenuVisibility(showMenu);
+
+        // hide pie triggers when keyguard is visible
+        try {
+            if (mWindowManagerService.isKeyguardLocked()
+                && (mDisabled & View.STATUS_BAR_DISABLE_HOME) != 0) {
+                keyguardTriggers(true);
+            } else {
+                keyguardTriggers(false);
+            }
+        } catch (RemoteException e) {
+            // nothing else to do ...
+        }
 
         // See above re: lights-out policy for legacy apps.
         if (showMenu) setLightsOn(true);

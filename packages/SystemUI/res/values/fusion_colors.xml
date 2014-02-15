@@ -31,7 +31,7 @@
     <color name="gesture_overlay_background_fill_color">#80000000</color>
     <color name="gesture_color">@android:color/holo_blue_light</color>
 
-    <!-- Pie controls -->
+    <!-- SlimPie controls -->
     <color name="pie_overlay_color">#ff000000</color>
     <color name="pie_snap_color">#ffffffff</color>
     <color name="pie_text_color">#ffffffff</color>
@@ -40,5 +40,17 @@
     <color name="pie_selected_color">#ff5c5c5c</color>
     <color name="pie_long_pressed_color">#ff8c8c8c</color>
     <color name="pie_outline_color">#ff5c5c5c</color>
+
+    <!-- FusionPie controls -->
+    <!-- this color is used to darkening the whole screen when fusion pie controls are active -->
+    <color name="fusion_pie_overlay_color">#ff000000</color>
+    <!-- color of an active snap point (inactive are blended with a 0x40 alpha channel) -->
+    <color name="fusion_pie_snap_color">@android:color/holo_blue_light</color>
+    <color name="fusion_pie_text_color">#ffffffff</color>
+    <color name="fusion_pie_foreground_color">#ffffffff</color>
+    <color name="fusion_pie_background_color">#ff0099cc</color>
+    <color name="fusion_pie_selected_color">@android:color/holo_blue_light</color>
+    <color name="fusion_pie_long_pressed_color">#ff8ad5f0</color>
+    <color name="fusion_pie_outline_color">#ff0099cc</color>
 
 </resources>

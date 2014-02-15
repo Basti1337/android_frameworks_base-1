@@ -293,6 +293,21 @@ public class BatteryCircleMeterView extends ImageView {
         mBatteryStyle = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_BATTERY, 0, UserHandle.USER_CURRENT);
 
+        boolean disableStatusBarInfo = Settings.System.getInt(resolver,
+                Settings.System.FUSION_PIE_DISABLE_STATUSBAR_INFO, 0) == 1;
+        if (disableStatusBarInfo) {
+            // call only the settings if statusbar info is really hidden
+            int fusionPieMode = Settings.System.getInt(resolver,
+                    Settings.System.FUSION_PIE_CONTROLS, 0);
+            boolean expandedDesktopState = Settings.System.getInt(resolver,
+                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
+
+            if (fusionPieMode == 2
+                || fusionPieMode == 1 && expandedDesktopState) {
+                mBatteryStyle = BatteryMeterView.BATTERY_STYLE_GONE;
+            }
+        }
+
         mCircleColor = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUS_BAR_BATTERY_COLOR, -2, UserHandle.USER_CURRENT);
         mCircleTextColor = Settings.System.getIntForUser(resolver,

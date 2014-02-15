@@ -4906,7 +4906,7 @@ public final class Settings {
         public static final String ENABLE_FAST_TORCH = "enable_fast_torch";
 
         /**
-         * Whether to enable pie controls
+         * Whether to enable SLIMPie controls
          * The value is 1, 2 or 0).
          * Default: 0
          * On expanded desktop: 1
@@ -5054,6 +5054,193 @@ public final class Settings {
          */
         public static final String PIE_BUTTONS_CONFIG_SECOND_LAYER =
                 "pie_buttons_config_second_layer";
+
+        /**
+         * Whether to enable FUSIONPie controls
+         * The value is 1, 2 or 0).
+         * Default: 0
+         * On expanded desktop: 1
+         * always: 2
+         * @hide
+         */
+        public static final String FUSION_PIE_CONTROLS = "fusion_pie_controls";
+
+        /**
+         * Whether dynamic menu button is shown or not or dynamic (default)
+         * @hide
+         */
+        public static final String FUSION_PIE_MENU = "fusion_pie_menu";
+
+        /**
+         * Whether right edge FUSION_PIE is mirrored or not
+         * @hide
+         */
+        public static final String FUSION_PIE_MIRROR_RIGHT = "fusion_pie_mirror_right";
+
+        /**
+         * Fusion Fusion Pie show text (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_SHOW_TEXT = "fusion_pie_show_text";
+
+        /**
+         * Fusion Fusion Pie disable redundant statusbar infos (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_DISABLE_STATUSBAR_INFO = "fusion_pie_disable_statusbar_info";
+
+        /**
+         * Fusion Fusion Pie show snap (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_SHOW_SNAP = "fusion_pie_show_snap";
+
+        /**
+         * Fusion Fusion Pie show background (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_SHOW_BACKGROUND = "fusion_pie_show_background";
+
+        /**
+         * Locations of the fusion pie in the screen.
+         * (1<<0) = LEFT
+         * (1<<1) = BOTTOM
+         * (1<<2) = RIGHT
+         * (1<<3) = TOP
+         * Default: LEFT
+         * @hide
+         */
+        public static final String FUSION_PIE_GRAVITY = "fusion_pie_gravity";
+
+        /**
+         * Relative fusion pie size (fraction)
+         * Default: 1.0f
+         * @hide
+         */
+        public static final String FUSION_PIE_SIZE = "fusion_pie_size";
+
+        /**
+         * Relative fusion pie trigger thickness
+         * @hide
+         */
+        public static final String FUSION_PIE_TRIGGER_THICKNESS = "fusion_pie_trigger_thickness";
+
+        /**
+         * Relative fusion pie trigger height for left and right trigger
+         * @hide
+         */
+        public static final String FUSION_PIE_TRIGGER_HEIGHT = "fusion_pie_trigger_height";
+
+        /**
+         * Fusion Pie trigger vertical gravity
+         * @hide
+         */
+        public static final String FUSION_PIE_TRIGGER_GRAVITY_LEFT_RIGHT = "fusion_pie_trigger_gravity_left_right";
+
+        /**
+         * Show Fusion Pie trigger
+         * @hide
+         */
+        public static final String FUSION_PIE_TRIGGER_SHOW = "fusion_pie_trigger_show";
+
+        /**
+         * Fusion Pie IME softkeyboard state toggle (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_SOFTKEYBOARD_IS_SHOWING = "fusion_pie_softkeyboard_is_showing";
+
+        /**
+         * Fusion Pie allow to adjust triggers if IME is showing (0 or 1)
+         * @hide
+         */
+        public static final String FUSION_PIE_ADJUST_TRIGGER_FOR_IME = "fusion_pie_adjust_trigger_for_ime";
+
+        /**
+         * Fusion Pie button color
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_COLOR = "fusion_pie_button_color";
+
+        /**
+         * Fusion Pie button press color
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_PRESSED_COLOR = "fusion_pie_button_pressed_color";
+
+        /**
+         * Fusion Pie button long press color
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_LONG_PRESSED_COLOR = "fusion_pie_button_long_pressed_color";
+
+        /**
+         * Fusion Pie button outline color
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_OUTLINE_COLOR = "fusion_pie_button_outline_color";
+
+        /**
+         * Fusion Pie background color
+         * @hide
+         */
+        public static final String FUSION_PIE_BACKGROUND_COLOR = "fusion_pie_background_color";
+
+        /**
+         * Fusion Pie snap color
+         * @hide
+         */
+        public static final String FUSION_PIE_SNAP_COLOR = "fusion_pie_snap_color";
+
+        /**
+         * Fusion Pie text color
+         * @hide
+         */
+        public static final String FUSION_PIE_TEXT_COLOR = "fusion_pie_text_color";
+
+        /**
+         * Fusion Pie icon color
+         * @hide
+         */
+        public static final String FUSION_PIE_ICON_COLOR = "fusion_pie_icon_color";
+
+        /**
+         * Fusion Pie icon color mode
+         * @hide
+         */
+        public static final String FUSION_PIE_ICON_COLOR_MODE = "fusion_pie_icon_color_mode";
+
+        /**
+         * Fusion Pie button alpha
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_ALPHA = "fusion_pie_button_alpha";
+
+        /**
+         * Fusion Pie button pressed and long pressed alpha
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTON_PRESSED_ALPHA = "fusion_pie_button_pressed_alpha";
+
+        /**
+         * Fusion Pie background alpha
+         * @hide
+         */
+        public static final String FUSION_PIE_BACKGROUND_ALPHA = "fusion_pie_background_alpha";
+
+        /**
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTONS_CONFIG = "fusion_pie_buttons_config";
+
+        /**
+         * @hide
+         */
+        public static final String FUSION_PIE_SECOND_LAYER_ACTIVE = "fusion_pie_second_layer_active";
+
+        /**
+         * @hide
+         */
+        public static final String FUSION_PIE_BUTTONS_CONFIG_SECOND_LAYER = "fusion_fusion_pie_buttons_config_second_layer";
 
         /**
          * @hide
