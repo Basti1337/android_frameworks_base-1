@@ -87,7 +87,7 @@
     <!-- Height of the notification panel brightness slider -->
     <dimen name="notification_panel_brightness_height">42dp</dimen>
 
-    <!-- SlimPie controls -->
+    <!-- Pie controls -->
     <!-- Padding between the pie controls and the screen border -->
     <dimen name="pie_padding">4dp</dimen>
 
@@ -108,36 +108,5 @@
     <dimen name="pie_sysinfo_radius">165dp</dimen>
     <dimen name="pie_sysinfo_second_layer_radius">255dp</dimen>
     <dimen name="pie_sysinfo_height">85sp</dimen>
-
-    <!-- FusionPie controls -->
-    <!-- Actual width/height of the trigger views placed on the UI -->
-    <dimen name="fusion_pie_trigger_thickness">7dp</dimen>
-    <!-- Minimum width/height of the trigger views placed on the UI -->
-    <dimen name="fusion_pie_trigger_min_thickness">3dp</dimen>
-    <!-- Maximum width/height of the trigger views placed on the UI -->
-    <dimen name="fusion_pie_trigger_max_thickness">18dp</dimen>
-    <!-- The distance a touch event must travel on the surface to trigger the fusion  pie control -->
-    <dimen name="fusion_pie_trigger_distance">3dp</dimen>
-    <!-- Padding between the fusion pie controls and the screen border -->
-    <dimen name="fusion_pie_padding">16dp</dimen>
-
-    <!-- Radius of the snap points a the border of the screen -->
-    <dimen name="fusion_pie_snap_radius">45dp</dimen>
-    <!-- Stroke width of the snap points -->
-    <dimen name="fusion_pie_snap_outline">4dp</dimen>
-
-    <dimen name="fusion_pie_outline">2dp</dimen>
-    <!-- Text size of "normal" / small text on the fusion pie control -->
-    <dimen name="fusion_pie_textsize">12sp</dimen>
-    <!-- Minimum size of imageviews placed within fusion pie items -->
-    <dimen name="fusion_pie_item_size">30dp</dimen>
-
-    <dimen name="fusion_pie_navbar_radius">70dp</dimen>
-    <dimen name="fusion_pie_navbar_second_layer_radius">160dp</dimen>
-    <dimen name="fusion_pie_navbar_height">85dp</dimen>
-
-    <dimen name="fusion_pie_sysinfo_radius">165dp</dimen>
-    <dimen name="fusion_pie_sysinfo_second_layer_radius">255dp</dimen>
-    <dimen name="fusion_pie_sysinfo_height">85sp</dimen>
  
 </resources>

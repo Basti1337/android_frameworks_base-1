@@ -33,7 +33,6 @@ import android.content.Context;
 import android.content.ComponentName;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageDataObserver;
 import android.content.pm.PackageManager;
@@ -104,15 +103,12 @@ import com.android.systemui.R;
 import com.android.systemui.RecentsComponent;
 import com.android.systemui.SearchPanelView;
 import com.android.systemui.SystemUI;
-import com.android.systemui.statusbar.fusion.pie.FusionPieLayout;
 import com.android.systemui.statusbar.halo.Halo;
 import com.android.systemui.statusbar.phone.KeyguardTouchDelegate;
 import com.android.systemui.statusbar.phone.NavigationBarOverlay;
 import com.android.systemui.statusbar.phone.PhoneStatusBar;
 import com.android.systemui.statusbar.policy.NotificationRowLayout;
 import com.android.systemui.statusbar.policy.activedisplay.ActiveDisplayView;
-import com.android.systemui.statusbar.policy.FusionPieController;
-import com.android.systemui.statusbar.policy.FusionPieController.Position;
 import com.android.systemui.statusbar.policy.PieController;
 
 import java.util.ArrayList;
@@ -123,7 +119,6 @@ public abstract class BaseStatusBar extends SystemUI implements
         CommandQueue.Callbacks {
     public static final String TAG = "StatusBar";
     public static final boolean DEBUG = false;
-    public static final boolean DEBUG_INPUT = false;
     public static final boolean MULTIUSER_DEBUG = false;
 
     protected static final int MSG_TOGGLE_RECENTS_PANEL = 1020;
@@ -144,13 +139,6 @@ public abstract class BaseStatusBar extends SystemUI implements
     // scores above this threshold should be displayed in heads up mode.
     protected static final int INTERRUPTION_THRESHOLD = 11;
     protected static final String SETTING_HEADS_UP = "heads_up_enabled";
-
-    private boolean mFusionPieShowTrigger = false;
-    private boolean mForceBottomTrigger = false;
-    private float mFusionPieTriggerThickness;
-    private float mFusionPieTriggerHeight;
-    private int mFusionPieTriggerGravityLeftRight;
-    private boolean mFusionPieImeIsShowing = false;
 
     // Should match the value in PhoneWindowManager
     public static final String SYSTEM_DIALOG_REASON_RECENT_APPS = "recentapps";
@@ -232,88 +220,6 @@ public abstract class BaseStatusBar extends SystemUI implements
     protected NavigationBarOverlay mNavigationBarOverlay;
 
     private EdgeGestureManager mEdgeGestureManager;
-
-    // Fusion Pie Control
-    protected FusionPieController mFusionPieController;
-    protected FusionPieLayout mFusionPieContainer;
-    private int mFusionPieTriggerSlots;
-    public int mFusionPieTriggerMask = Position.LEFT.FLAG
-            | Position.BOTTOM.FLAG
-            | Position.RIGHT.FLAG
-            | Position.TOP.FLAG;
-    private boolean mForceDisableBottomAndTopTrigger = false;
-    private boolean mDisableFusionPie = false;
-    private View[] mFusionPieTrigger = new View[Position.values().length];
-    private FusionPieSettingsObserver mPieSettingsObserver;
-
-    private View.OnTouchListener mFusionPieTriggerOnTouchHandler = new View.OnTouchListener() {
-        @Override
-        public boolean onTouch(View v, MotionEvent event) {
-            final int action = event.getAction();
-            final FusionPieController.Tracker tracker = (FusionPieController.Tracker)v.getTag();
-
-            if (tracker == null) {
-                if (DEBUG_INPUT) {
-                    Slog.v(TAG, "Fusion Pie trigger onTouch: action: " + action + ", ("
-                            + event.getAxisValue(MotionEvent.AXIS_X) + ","
-                            + event.getAxisValue(MotionEvent.AXIS_Y) + ") position: NULL returning: false");
-                }
-                return false;
-            }
-
-            if (!mFusionPieController.isShowing()) {
-                if (event.getPointerCount() > 1) {
-                    if (DEBUG_INPUT) {
-                        Slog.v(TAG, "Fusion Pie trigger onTouch: action: " + action
-                                + ", (to many pointers) position: " + tracker.position.name()
-                                + " returning: false");
-                    }
-                    return false;
-                }
-
-                switch (action) {
-                    case MotionEvent.ACTION_DOWN:
-                        tracker.start(event);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        if (tracker.move(event)) {
-                            if (DEBUG) {
-                                Slog.v(TAG, "Fusion Pie control activated on: ("
-                                        + event.getAxisValue(MotionEvent.AXIS_X) + ","
-                                        + event.getAxisValue(MotionEvent.AXIS_Y) + ") with position: "
-                                        + tracker.position.name());
-                            }
-                            // send the activation to the controller
-                            mFusionPieController.activateFromTrigger(v, event, tracker.position);
-                            // forward a spoofed ACTION_DOWN event
-                            MotionEvent echo = event.copy();
-                            echo.setAction(MotionEvent.ACTION_DOWN);
-                            return mFusionPieContainer.onTouch(v, echo);
-                        }
-                        break;
-                    default:
-                        // whatever it was, we are giving up on this one
-                        tracker.active = false;
-                        break;
-                }
-            } else {
-                if (DEBUG_INPUT) {
-                    Slog.v(TAG, "Fusion Pie trigger onTouch: action: " + action + ", ("
-                            + event.getAxisValue(MotionEvent.AXIS_X) + ","
-                            + event.getAxisValue(MotionEvent.AXIS_Y)
-                            + ") position: " + tracker.position.name() + " delegating");
-                }
-                return mFusionPieContainer.onTouch(v, event);
-            }
-            if (DEBUG_INPUT) {
-                Slog.v(TAG, "Fusion Pie trigger onTouch: action: " + action + ", ("
-                        + event.getAxisValue(MotionEvent.AXIS_X) + ","
-                        + event.getAxisValue(MotionEvent.AXIS_Y) + ") position: "
-                        + tracker.position.name() + " returning: " + tracker.active);
-            }
-            return tracker.active;
-        }
-    };
 
     // UI-specific methods
 
@@ -631,12 +537,6 @@ public abstract class BaseStatusBar extends SystemUI implements
             }});
 
         updateHalo();
-
-        mPieSettingsObserver = new FusionPieSettingsObserver(new Handler());
-
-        // this calls attachFusionPie() implicitly
-        mPieSettingsObserver.onChange(true);
-        mPieSettingsObserver.observe();
     }
 
     public void setHaloTaskerActive(boolean haloTaskerActive, boolean updateNotificationIcons) {
@@ -756,7 +656,6 @@ public abstract class BaseStatusBar extends SystemUI implements
             mLayoutDirection = ld;
             refreshLayout(ld);
         }
-        attachFusionPie();
     }
 
     protected View updateNotificationVetoButton(View row, StatusBarNotification n) {
@@ -1028,12 +927,6 @@ public abstract class BaseStatusBar extends SystemUI implements
         }
     }
 
-    static int screenLayout() {
-        final int screenSize = Resources.getSystem().getConfiguration().screenLayout &
-                Configuration.SCREENLAYOUT_SIZE_MASK;
-        return screenSize;
-    }
-
     protected abstract View getStatusBarView();
 
     protected View.OnTouchListener mRecentsPreloadOnTouchListener = new View.OnTouchListener() {
@@ -1117,14 +1010,6 @@ public abstract class BaseStatusBar extends SystemUI implements
                  if (mSearchPanelView != null) {
                      mSearchPanelView.show(true, true);
                      onShowSearchPanel();
-                     View bottom = mFusionPieTrigger[Position.BOTTOM.INDEX];
-                     if (bottom != null) {
-                         WindowManager.LayoutParams lp =
-                                 (android.view.WindowManager.LayoutParams) bottom.getLayoutParams();
-                         lp.flags &= ~WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-                         lp.flags |= WindowManager.LayoutParams.FLAG_SLIPPERY;
-                         mWindowManager.updateViewLayout(bottom, lp);
-                     }
                  }
                  break;
              case MSG_CLOSE_SEARCH_PANEL:
@@ -1132,15 +1017,6 @@ public abstract class BaseStatusBar extends SystemUI implements
                  if (mSearchPanelView != null && mSearchPanelView.isShowing()) {
                      mSearchPanelView.show(false, true);
                      onHideSearchPanel();
-
-                     View bottom = mFusionPieTrigger[Position.BOTTOM.INDEX];
-                     if (bottom != null) {
-                         WindowManager.LayoutParams lp =
-                                 (android.view.WindowManager.LayoutParams) bottom.getLayoutParams();
-                         lp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL;
-                         lp.flags &= ~WindowManager.LayoutParams.FLAG_SLIPPERY;
-                         mWindowManager.updateViewLayout(bottom, lp);
-                     }
                  }
                  break;
              case MSG_TOGGLE_SCREENSHOT:
@@ -2134,325 +2010,5 @@ public abstract class BaseStatusBar extends SystemUI implements
         final boolean hide = mContext.getSharedPreferences("hidden_statusbar_icon_packages", 0)
                 .getBoolean(iconPackage, false);
         return hide;
-    }
-
-    // Fusion Pie Controls
-    private final class FusionPieSettingsObserver extends ContentObserver {
-        FusionPieSettingsObserver(Handler handler) {
-            super(handler);
-        }
-
-        void observe() {
-            ContentResolver resolver = mContext.getContentResolver();
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_CONTROLS), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_GRAVITY), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_TRIGGER_GRAVITY_LEFT_RIGHT), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_TRIGGER_THICKNESS), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_TRIGGER_HEIGHT), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_TRIGGER_SHOW), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.FUSION_PIE_SOFTKEYBOARD_IS_SHOWING), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.EXPANDED_DESKTOP_STATE), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.NAVIGATION_BAR_SHOW), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.NAVIGATION_BAR_CAN_MOVE), false, this);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            mFusionPieTriggerSlots = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_GRAVITY, Position.LEFT.FLAG);
-            mFusionPieShowTrigger = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_TRIGGER_SHOW, 0) == 1;
-            mFusionPieTriggerThickness = Settings.System.getFloat(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_TRIGGER_THICKNESS,
-                    mContext.getResources().getDimension(R.dimen.fusion_pie_trigger_thickness));
-            mFusionPieTriggerHeight = Settings.System.getFloat(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_TRIGGER_HEIGHT,
-                    0.7f);
-            mFusionPieTriggerGravityLeftRight = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_TRIGGER_GRAVITY_LEFT_RIGHT,
-                    Gravity.CENTER_VERTICAL);
-            mFusionPieImeIsShowing = Settings.System.getFloat(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_SOFTKEYBOARD_IS_SHOWING, 0) == 1
-                    && Settings.System.getFloat(mContext.getContentResolver(),
-                    Settings.System.FUSION_PIE_ADJUST_TRIGGER_FOR_IME, 1) == 1;
-
-            attachFusionPie();
-        }
-    }
-
-    private boolean isFusionPieEnabled() {
-        boolean expanded = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
-        int fusionPie = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.FUSION_PIE_CONTROLS, 0);
-
-        return (fusionPie == 1 && expanded) || fusionPie == 2;
-    }
-
-    private void attachFusionPie() {
-        if (isFusionPieEnabled()) {
-            // Create our container, if it does not exist already
-            if (mFusionPieContainer == null) {
-                mFusionPieContainer = new FusionPieLayout(mContext);
-                WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.MATCH_PARENT,
-                        WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL,
-                        WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                        | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
-                        PixelFormat.TRANSLUCENT);
-                // This title is for debugging only. See: dumpsys window
-                lp.setTitle("FusionPieControlPanel");
-                lp.windowAnimations = android.R.style.Animation;
-                lp.screenOrientation = ActivityInfo.SCREEN_ORIENTATION_BEHIND;
-
-                mWindowManager.addView(mFusionPieContainer, lp);
-
-                // once we need a pie controller, we create one and keep it forever ...
-                if (mFusionPieController == null) {
-                    mFusionPieController = new FusionPieController(mContext);
-                    mFusionPieController.attachStatusBar(this);
-                    addNavigationBarCallback(mFusionPieController);
-                }
-                mFusionPieController.attachContainer(mFusionPieContainer);
-            }
-
-            // add or update fusion pie triggers
-            setupTriggers(false);
-            refreshFusionPieTriggers();
-
-            if (DEBUG) {
-                Slog.d(TAG, "AttachFusionPie with trigger position flags: "
-                        + mFusionPieTriggerSlots + " masked: " + (mFusionPieTriggerSlots & mFusionPieTriggerMask));
-            }
-        } else {
-            for (int i = 0; i < mFusionPieTrigger.length; i++) {
-                if (mFusionPieTrigger[i] != null) {
-                    mWindowManager.removeView(mFusionPieTrigger[i]);
-                    mFusionPieTrigger[i] = null;
-                }
-            }
-            // detach from the fusion pie container and unregister observers and receivers
-            if (mFusionPieController != null) {
-                mFusionPieController.detachContainer();
-                mFusionPieContainer = null;
-            }
-        }
-    }
-
-    public void keyguardTriggers(boolean forceBottomTrigger) {
-        if (isFusionPieEnabled()) {
-            mForceBottomTrigger = forceBottomTrigger;
-            setupTriggers(false);
-        }
-    }
-
-    public void recreateFusionPie() {
-        if (isFusionPieEnabled()) {
-            mFusionPieController.constructSlices();
-        }
-    }
-
-    public void setupTriggers(boolean forceDisableBottomAndTopTrigger) {
-            if (!isFusionPieEnabled()) {
-                return;
-            }
-            boolean bottomTriggerEnabled = false;
-            boolean topTriggerEnabled = false;
-            boolean leftTriggerEnabled = false;
-            boolean rightTriggerEnabled = false;
-
-            // get expanded desktop values
-            boolean expanded = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.EXPANDED_DESKTOP_STATE, 0) == 1;
-
-            // get navigation bar values
-            final int showByDefault = mContext.getResources().getBoolean(
-                    com.android.internal.R.bool.config_showNavigationBar) ? 1 : 0;
-            boolean hasNavigationBar = Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.NAVIGATION_BAR_SHOW, showByDefault) == 1;
-            boolean navBarCanMove = Settings.System.getIntForUser(mContext.getContentResolver(),
-                        Settings.System.NAVIGATION_BAR_CAN_MOVE, 1, UserHandle.USER_CURRENT) == 1
-                        && screenLayout() != Configuration.SCREENLAYOUT_SIZE_LARGE
-                        && screenLayout() != Configuration.SCREENLAYOUT_SIZE_XLARGE;
-            boolean navigationBarHeight = Settings.System.getInt(mContext.getContentResolver(),
-                                Settings.System.NAVIGATION_BAR_HEIGHT,
-                                mContext.getResources().getDimensionPixelSize(
-                                                com.android.internal.R.dimen.navigation_bar_height)) != 0;
-            boolean navigationBarHeightLandscape = Settings.System.getInt(mContext.getContentResolver(),
-                                Settings.System.NAVIGATION_BAR_HEIGHT_LANDSCAPE,
-                                mContext.getResources().getDimensionPixelSize(
-                                                com.android.internal.R.dimen.navigation_bar_height_landscape)) != 0;
-            boolean navigationBarWidth = Settings.System.getInt(mContext.getContentResolver(),
-                                Settings.System.NAVIGATION_BAR_WIDTH,
-                                mContext.getResources().getDimensionPixelSize(
-                                                com.android.internal.R.dimen.navigation_bar_width)) != 0;
-
-            // disable on phones in landscape right trigger for navbar
-            boolean disableRightTriggerForNavbar =
-                    !isScreenPortrait()
-                    && hasNavigationBar
-                    && !expanded
-                    && navBarCanMove
-                    && navigationBarWidth;
-
-            // take in account the navbar dimensions
-            hasNavigationBar = (hasNavigationBar && isScreenPortrait() && navigationBarHeight)
-                                || (hasNavigationBar && !isScreenPortrait() && !navBarCanMove
-                                    && navigationBarHeightLandscape);
-
-            // let's set the triggers
-            if (!forceDisableBottomAndTopTrigger && (mForceBottomTrigger
-                    && (!hasNavigationBar
-                        || disableRightTriggerForNavbar && expanded))) {
-                bottomTriggerEnabled = true;
-            } else if (mForceBottomTrigger && hasNavigationBar) {
-                //do nothing all triggers are disabled and exit
-            } else if ((!expanded && hasNavigationBar)
-                    || forceDisableBottomAndTopTrigger) {
-                leftTriggerEnabled = true;
-                rightTriggerEnabled = true;
-            } else if ((!expanded && !hasNavigationBar)
-                    || expanded) {
-                leftTriggerEnabled = true;
-                rightTriggerEnabled = true;
-                bottomTriggerEnabled = true;
-            } else if (expanded && hasNavigationBar
-                    || !expanded && hasNavigationBar) {
-                leftTriggerEnabled = true;
-                rightTriggerEnabled = true;
-                topTriggerEnabled = true;
-            } else {
-                leftTriggerEnabled = true;
-                rightTriggerEnabled = true;
-                bottomTriggerEnabled = true;
-                topTriggerEnabled = true;
-            }
-            if (disableRightTriggerForNavbar) {
-                    rightTriggerEnabled = false;
-            }
-            if (mFusionPieImeIsShowing) {
-                    bottomTriggerEnabled = false;
-            }
-
-            int newMask;
-            newMask  = leftTriggerEnabled ? Position.LEFT.FLAG : 0;
-            newMask |= bottomTriggerEnabled ? Position.BOTTOM.FLAG : 0;
-            newMask |= rightTriggerEnabled ? Position.RIGHT.FLAG : 0;
-            newMask |= topTriggerEnabled ? Position.TOP.FLAG : 0;
-
-            updateFusionPieTriggerMask(newMask, forceDisableBottomAndTopTrigger);
-    }
-
-    private void updateFusionPieTriggerMask(int newMask, boolean forceDisableBottomAndTopTrigger) {
-        int oldState = mFusionPieTriggerSlots & mFusionPieTriggerMask;
-        boolean oldForceDisableBottomAndTopTrigger = mForceDisableBottomAndTopTrigger;
-        mFusionPieTriggerMask = newMask;
-        mForceDisableBottomAndTopTrigger = forceDisableBottomAndTopTrigger;
-
-        // first we check, if it would make a change
-        if ((mFusionPieTriggerSlots & mFusionPieTriggerMask) != oldState
-                || mForceDisableBottomAndTopTrigger != oldForceDisableBottomAndTopTrigger) {
-            refreshFusionPieTriggers();
-        }
-    }
-
-    // This should only be called, when is is clear that the fusion pie controls are active
-    private void refreshFusionPieTriggers() {
-        for (Position g : Position.values()) {
-            View trigger = mFusionPieTrigger[g.INDEX];
-            if (trigger == null && (mFusionPieTriggerSlots & mFusionPieTriggerMask & g.FLAG) != 0) {
-                trigger = new View(mContext);
-                trigger.setClickable(false);
-                trigger.setLongClickable(false);
-                trigger.setTag(mFusionPieController.buildTracker(g));
-                trigger.setOnTouchListener(mFusionPieTriggerOnTouchHandler);
-
-                if (DEBUG) {
-                    Slog.d(TAG, "addFusionPieTrigger on " + g.INDEX
-                            + " with position: " + g + " : " + trigger.toString());
-                }
-                showTrigger(trigger, DEBUG || mFusionPieShowTrigger);
-                mWindowManager.addView(trigger, getFusionPieTriggerLayoutParams(g));
-                mFusionPieTrigger[g.INDEX] = trigger;
-            } else if (trigger != null && (mFusionPieTriggerSlots & mFusionPieTriggerMask & g.FLAG) == 0) {
-                mWindowManager.removeView(trigger);
-                mFusionPieTrigger[g.INDEX] = null;
-            } else if (trigger != null) {
-                showTrigger(trigger, DEBUG || mFusionPieShowTrigger);
-                mWindowManager.updateViewLayout(trigger, getFusionPieTriggerLayoutParams(g));
-            }
-        }
-    }
-
-    private void showTrigger(View trigger, boolean show) {
-        if (show) {
-            trigger.setVisibility(View.VISIBLE);
-            trigger.setBackgroundColor(0x77ff0000);
-        } else {
-            trigger.setBackgroundColor(0x00000000);
-        }
-    }
-
-    private WindowManager.LayoutParams getFusionPieTriggerLayoutParams(Position position) {
-        final Resources res = mContext.getResources();
-
-        float FusionpieTriggerHeight = mFusionPieTriggerHeight;
-        final float FusionpieImePortraitMinHeight = 0.52f;
-        final float FusionpieImeLandscapeMinHeight = 0.32f;
-        if (mFusionPieImeIsShowing && isScreenPortrait()
-                && !mForceDisableBottomAndTopTrigger
-                && FusionpieTriggerHeight > FusionpieImePortraitMinHeight) {
-            FusionpieTriggerHeight = FusionpieImePortraitMinHeight;
-        } else if (mFusionPieImeIsShowing && !isScreenPortrait()
-                && !mForceDisableBottomAndTopTrigger
-                && FusionpieTriggerHeight > FusionpieImeLandscapeMinHeight) {
-            FusionpieTriggerHeight = FusionpieImeLandscapeMinHeight;
-        }
-
-        int width = (int) (res.getDisplayMetrics().widthPixels * 0.9f);
-        int height = (int) (res.getDisplayMetrics().heightPixels * FusionpieTriggerHeight);
-        int triggerThickness = (int) ((mFusionPieTriggerThickness * res.getDisplayMetrics().density) + 0.5);
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                (position == Position.TOP || position == Position.BOTTOM
-                        ? width : triggerThickness),
-                (position == Position.LEFT || position == Position.RIGHT
-                        ? height : triggerThickness),
-                WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL,
-                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
-                PixelFormat.TRANSLUCENT);
-        // This title is for debugging only. See: dumpsys window
-        lp.setTitle("FusionPieTrigger" + position.name());
-        if (position == Position.LEFT || position == Position.RIGHT) {
-            lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
-                    | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
-        } else {
-            lp.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED
-                    | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING;
-        }
-        if (mFusionPieImeIsShowing && !mForceDisableBottomAndTopTrigger
-                    && (position == Position.LEFT || position == Position.RIGHT)) {
-            lp.gravity = position.ANDROID_GRAVITY | Gravity.TOP;
-        } else if (position == Position.LEFT || position == Position.RIGHT) {
-            lp.gravity = position.ANDROID_GRAVITY | mFusionPieTriggerGravityLeftRight;
-        } else {
-            lp.gravity = position.ANDROID_GRAVITY;
-        }
-        return lp;
     }
 }
