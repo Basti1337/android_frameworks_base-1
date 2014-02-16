@@ -299,6 +299,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     View mClockViewExpanded;
     View mDateViewExpanded;
     View mClearButton;
+    ImageView mSettingsButton, mNotificationButton;
     View mSpacer;
 
     // Weatherpanel
