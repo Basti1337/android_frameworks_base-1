@@ -3143,17 +3143,24 @@ public final class Settings {
          */
         public static final String HALO_ENABLED = "halo_enabled";
 
-        /**
+       /**
         * Notification Power Widget - Custom Torch Mode
         * @hide
         */
         public static final String EXPANDED_FLASH_MODE = "expanded_flash_mode";
 
-        /**
+       /**
         * AutoHide CombinedBar on tablets.
         * @hide
         */
         public static final String COMBINED_BAR_AUTO_HIDE = "combined_bar_auto_hide";
+
+       /**
+        *
+        * SMOOTH PROGRESS BAR interpolator
+        * @hide
+        */
+        public static final String PROGRESSBAR_INTERPOLATOR = "progressbar_interpolator";
 
 	/**
          * Whether to show the network status in the status bar
