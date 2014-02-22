@@ -657,7 +657,7 @@ final class DisplayPowerController {
 
                         // scale image if its too large
                         if (bmp.getWidth() > MAX_BLUR_WIDTH) {
-                            tmpBmp = bmp.createScaledBitmap(bmp, MAX_BLUR_WIDTH, MAX_BLUR_HEIGHT, true);
+                            tmpBmp = Bitmap.createScaledBitmap(bmp, MAX_BLUR_WIDTH, MAX_BLUR_HEIGHT, true);
                         }
 
                         mKeyguardService.setBackgroundBitmap(tmpBmp);
