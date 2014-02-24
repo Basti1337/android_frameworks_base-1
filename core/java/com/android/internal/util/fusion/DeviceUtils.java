@@ -22,6 +22,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.hardware.SensorManager;
 import android.net.ConnectivityManager;
 import android.nfc.NfcAdapter;
 import android.os.Vibrator;
@@ -31,6 +32,8 @@ import android.view.DisplayInfo;
 import android.view.WindowManager;
 import android.util.Log;
 import com.android.internal.telephony.PhoneConstants;
+import static android.hardware.Sensor.TYPE_LIGHT;
+import static android.hardware.Sensor.TYPE_PROXIMITY;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -130,7 +133,7 @@ public class DeviceUtils {
                         && !deviceSupportsVibrator(context)
                 || action.equals(ButtonsConstants.ACTION_SMART_PULLDOWN)
                         && isTablet(context)) {
-            return false;
+              return false;
         }
         return true;
     }
@@ -138,6 +141,16 @@ public class DeviceUtils {
     public static class FilteredDeviceFeaturesArray {
         public String[] entries;
         public String[] values;
+    }
+
+    public static boolean deviceSupportsProximitySensor(Context context) {
+        SensorManager sm = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        return sm.getDefaultSensor(TYPE_PROXIMITY) != null;
+    }
+
+    public static boolean deviceSupportsLightSensor(Context context) {
+        SensorManager sm = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        return sm.getDefaultSensor(TYPE_LIGHT) != null;
     }
 
     private static int getScreenType(Context con) {
