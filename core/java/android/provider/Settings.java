@@ -4353,18 +4353,6 @@ public final class Settings {
         public static final String EXPANDED_DESKTOP_STATE = "expanded_desktop_state";
 
         /**
-         * show clear all recents button
-         *  @hide
-         */
-        public static final String SHOW_CLEAR_RECENTS_BUTTON = "clear_recents_button";
-
-        /**
-         * location of the clear all rectents button
-         * @hide
-         */
-        public static final String CLEAR_RECENTS_BUTTON_LOCATION = "clear_recents_button_location";
-
-        /**
          * Defines the custom path to use for UI sound effects (null for default)
          * @hide
          */
@@ -5067,11 +5055,6 @@ public final class Settings {
          */
         public static final String PIE_BUTTONS_CONFIG_SECOND_LAYER =
                 "pie_buttons_config_second_layer";
-
-        /**
-         * @hide
-         */
-        public static final String LARGE_RECENT_THUMBS = "large_recent_thumbs";
 
         /**
          * @hide
