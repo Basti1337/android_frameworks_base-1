@@ -20,6 +20,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.android.systemui.R;
+
 public class QuickSettingsHorizontalScrollView extends HorizontalScrollView {
 
     enum EventStates {

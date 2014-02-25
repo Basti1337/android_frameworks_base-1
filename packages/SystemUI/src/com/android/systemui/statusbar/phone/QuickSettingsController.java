@@ -135,6 +135,8 @@ public class QuickSettingsController {
     private ContentObserver mObserver;
     public PhoneStatusBar mStatusBarService;
     private final String mSettingsKey;
+    private boolean mHideLiveTiles;
+    private boolean mHideLiveTileLabels;
 
     private InputMethodTile mIMETile;
 
@@ -148,7 +150,6 @@ public class QuickSettingsController {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
-
                 switch (msg.what) {
                     case MSG_UPDATE_TILES:
                         setupQuickSettings();
@@ -231,7 +232,7 @@ public class QuickSettingsController {
                 qs = new ToggleLockscreenTile(mContext, this);
             } else if (tile.equals(TILE_NETWORKMODE) && mobileDataSupported) {
                 qs = new MobileNetworkTypeTile(mContext,
-                        this, mStatusBarService.mNetworkController);
+                     this, mStatusBarService.mNetworkController);
             } else if (tile.equals(TILE_AUTOROTATE)) {
                 qs = new AutoRotateTile(mContext, this, mHandler);
             } else if (tile.equals(TILE_AIRPLANE)) {
@@ -272,6 +273,10 @@ public class QuickSettingsController {
             }
         }
 
+        if (mHideLiveTiles) {
+            return;
+        }
+
         // Load the dynamic tiles
         // These toggles must be the last ones added to the view, as they will show
         // only when they are needed
@@ -307,7 +312,6 @@ public class QuickSettingsController {
                 mQuickSettingsTiles.add(qs);
             }
         }
-
     }
 
     private String findCustomKey (String tile) {
@@ -339,6 +343,11 @@ public class QuickSettingsController {
         loadTiles();
         setupBroadcastReceiver();
         setupContentObserver();
+        if (mHideLiveTileLabels) {
+            for (QuickSettingsTile t : mQuickSettingsTiles) {
+                t.setLabelVisibility(false);
+            }
+        }
     }
 
     void setupContentObserver() {
@@ -440,5 +449,19 @@ public class QuickSettingsController {
         for (QuickSettingsTile t : mQuickSettingsTiles) {
             t.updateResources();
         }
+    }
+
+    public void setTileTitleVisibility(boolean visible) {
+        for (QuickSettingsTile t : mQuickSettingsTiles) {
+            t.setLabelVisibility(visible);
+        }
+    }
+
+    public void hideLiveTileLabels(boolean hide) {
+        mHideLiveTileLabels = hide;
+    }
+
+    public void hideLiveTiles(boolean hide) {
+        mHideLiveTiles = hide;
     }
 }
