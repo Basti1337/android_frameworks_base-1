@@ -1636,6 +1636,19 @@ public class Resources {
          * Quick test to find out if the config change that occurred should
          * trigger a full cache wipe.
          */
+        if (Configuration.needNewResources(configChanges, 0)) {
+            if (DEBUG_CONFIG) {
+                Log.d(TAG, "Clear drawable cache from config changes: 0x"
+                        + Integer.toHexString(configChanges));
+            }
+            cache.clear();
+            return;
+        }
+
+        /*
+         * Quick test to find out if the config change that occurred should
+         * trigger a full cache wipe.
+         */
         if (Configuration.needNewResources(configChanges, ActivityInfo.CONFIG_UI_THEME_MODE)) {
             if (DEBUG_CONFIG) {
                 Log.d(TAG, "Clear drawable cache from config changes: 0x"
