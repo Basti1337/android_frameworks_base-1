@@ -151,8 +151,14 @@ public final class BluetoothHidDevice implements BluetoothProfile {
             synchronized (mConnection) {
                 if (!up) {
                     Log.d(TAG,"Unbinding service...");
-                    mService = null;
-                    mContext.unbindService(mConnection);
+                    if (mService != null) {
+                        mService = null;
+                        try {
+                            mContext.unbindService(mConnection);
+                        } catch (IllegalArgumentException e) {
+                            Log.e(TAG,"onBluetoothStateChange: could not unbind service:", e);
+                        }
+                    }
                 } else {
                     try {
                         if (mService == null) {

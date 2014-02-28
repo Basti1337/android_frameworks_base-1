@@ -585,9 +585,9 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
                 if (policy == null && meteredHint) {
                     // policy doesn't exist, and AP is hinting that it's
                     // metered: create an inferred policy.
-                    policy = new NetworkPolicy(template, CYCLE_NONE, CYCLE_MONTHLY, Time.TIMEZONE_UTC,
-                            WARNING_DISABLED, LIMIT_DISABLED, SNOOZE_NEVER, SNOOZE_NEVER,
-                            meteredHint, true);
+                    policy = new NetworkPolicy(template, CYCLE_NONE, CYCLE_MONTHLY,
+                            Time.TIMEZONE_UTC, WARNING_DISABLED, LIMIT_DISABLED, SNOOZE_NEVER,
+                            SNOOZE_NEVER, meteredHint, true);
                     addNetworkPolicyLocked(policy);
 
                 } else if (policy != null && policy.inferred) {
@@ -1133,8 +1133,8 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
 
             final NetworkTemplate template = buildTemplateMobileAll(subscriberId);
             final NetworkPolicy policy = new NetworkPolicy(template, cycleDay, cycleLength, 
-            		cycleTimezone, warningBytes, LIMIT_DISABLED, SNOOZE_NEVER, SNOOZE_NEVER, 
-            		true, true);
+                    cycleTimezone, warningBytes, LIMIT_DISABLED, SNOOZE_NEVER, SNOOZE_NEVER, 
+                    true, true);
             addNetworkPolicyLocked(policy);
         }
     }
@@ -1308,7 +1308,7 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
                     out.attribute(null, ATTR_NETWORK_ID, networkId);
                 }
                 writeIntAttribute(out, ATTR_CYCLE_DAY, policy.cycleDay);
-                writeIntAttribute(out, ATTR_CYCLE_LENGTH, policy.cycleLength); 
+                writeIntAttribute(out, ATTR_CYCLE_LENGTH, policy.cycleLength);
                 out.attribute(null, ATTR_CYCLE_TIMEZONE, policy.cycleTimezone);
                 writeLongAttribute(out, ATTR_WARNING_BYTES, policy.warningBytes);
                 writeLongAttribute(out, ATTR_LIMIT_BYTES, policy.limitBytes);
@@ -1441,6 +1441,12 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
     public void setNetworkPolicies(NetworkPolicy[] policies) {
         mContext.enforceCallingOrSelfPermission(MANAGE_NETWORK_POLICY, TAG);
 
+        // Before clear and refresh mNetworkPolicy, we need to ensure all the
+        // policies to be added are validated, otherwise this service will throw
+        // IllegalArgumentException and cause system crash when updating network
+        // template after receiving ACTION_NETWORK_STATS_UPDATED.
+        validatePoliciesToSet(policies);
+
         maybeRefreshTrustedTime();
         synchronized (mRulesLock) {
             mNetworkPolicy.clear();
@@ -1452,6 +1458,27 @@ public class NetworkPolicyManagerService extends INetworkPolicyManager.Stub {
             updateNetworkRulesLocked();
             updateNotificationsLocked();
             writePolicyLocked();
+        }
+    }
+
+    /**
+     * ensure the policies have valid template
+     *
+     * @param policies
+     */
+    private void validatePoliciesToSet(NetworkPolicy[] policies) {
+        for (NetworkPolicy policy : policies) {
+            switch (policy.template.getMatchRule()) {
+                case MATCH_MOBILE_3G_LOWER:
+                case MATCH_MOBILE_4G:
+                case MATCH_MOBILE_ALL:
+                case MATCH_WIFI:
+                case MATCH_ETHERNET:
+                    break;
+                default:
+                    throw new IllegalArgumentException("unexpected template "
+                            + policy.template.getMatchRule());
+            }
         }
     }
 

@@ -80,15 +80,15 @@ static void android_server_AlarmManagerService_set(JNIEnv*, jobject, jint fd, ji
 
 static void android_server_AlarmManagerService_clear(JNIEnv* env, jobject obj, jint fd, jint type, jlong seconds, jlong nanoseconds)
 {
-  struct timespec ts;
-  ts.tv_sec = seconds;
-  ts.tv_nsec = nanoseconds;
+	struct timespec ts;
+	ts.tv_sec = seconds;
+	ts.tv_nsec = nanoseconds;
 
-  int result = ioctl(fd, ANDROID_ALARM_CLEAR(type), &ts);
-  if (result < 0)
-  {
-      ALOGE("Unable to clear alarm %lld.%09lld: %s\n", seconds, nanoseconds, strerror(errno));
-  }
+	int result = ioctl(fd, ANDROID_ALARM_CLEAR(type), &ts);
+	if (result < 0)
+	{
+	    ALOGE("Unable to clear alarm %lld.%09lld: %s\n", seconds, nanoseconds, strerror(errno));
+	}
 }
 
 static jint android_server_AlarmManagerService_waitForAlarm(JNIEnv*, jobject, jint fd)

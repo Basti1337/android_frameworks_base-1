@@ -13,8 +13,6 @@ import android.os.RemoteException;
 import android.os.UserHandle;
 import android.provider.Settings;
 
-import java.lang.Math;
-import java.math.BigInteger;
 import java.util.List;
 
 public class DevUtils {

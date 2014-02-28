@@ -83,7 +83,6 @@ import java.util.List;
 import java.util.UUID;
 
 import com.android.internal.statusbar.IStatusBarService;
-
 import com.android.internal.util.fusion.ButtonConfig;
 import com.android.internal.util.fusion.ImageHelper;
 import com.android.internal.util.fusion.PolicyConstants;
@@ -294,6 +293,27 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 });
         }
 
+        // next: screenrecord
+        // only shown if enabled, disabled by default
+        boolean showScreenrecord = Settings.System.getIntForUser(cr,
+                Settings.System.POWER_MENU_SCREENRECORD_ENABLED, 0, UserHandle.USER_CURRENT) == 1;
+        if (showScreenrecord) {
+            mItems.add(
+                new SinglePressAction(R.drawable.ic_lock_screen_record, R.string.global_action_screen_record) {
+                    public void onPress() {
+                        toggleScreenRecord();
+                    }
+
+                    public boolean showDuringKeyguard() {
+                        return true;
+                    }
+
+                    public boolean showBeforeProvisioning() {
+                        return true;
+                    }
+                });
+        }
+
         // bug report, if enabled
         if (Settings.Global.getInt(mContext.getContentResolver(),
                 Settings.Global.BUGREPORT_IN_POWER_MENU, 0) != 0 && isCurrentUserOwner()) {
@@ -405,26 +425,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                             return true;
                         }
                     });
-            // next: screenrecord
-            // only shown if enabled, disabled by default
-            boolean showScreenrecord = Settings.System.getIntForUser(cr,
-                    Settings.System.POWER_MENU_SCREENRECORD_ENABLED, 0, UserHandle.USER_CURRENT) == 1;
-            if (showScreenrecord) {
-                mItems.add(
-                    new SinglePressAction(R.drawable.ic_lock_screen_record, R.string.global_action_screen_record) {
-                        public void onPress() {
-                            toggleScreenRecord();
-                        }
-
-                        public boolean showDuringKeyguard() {
-                            return true;
-                        }
-
-                        public boolean showBeforeProvisioning() {
-                            return true;
-                        }
-                    });
-            }
             // airplane mode
             } else if (config.getClickAction().equals(PolicyConstants.ACTION_AIRPLANE)) {
                 constructAirPlaneModeToggle(PolicyHelper.getPowerMenuIconImage(mContext,
@@ -1359,7 +1359,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             case MESSAGE_DISMISS:
                 if (mDialog != null) {
                     mDialog.dismiss();
-                    mDialog = null;
                 }
                 break;
             case MESSAGE_REFRESH:

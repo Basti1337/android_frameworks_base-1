@@ -146,6 +146,11 @@ public final class BatteryService extends Binder {
     private BatteryListener mBatteryPropertiesListener;
     private IBatteryPropertiesRegistrar mBatteryPropertiesRegistrar;
 
+    // Quiet hours support
+    private boolean mQuietHoursEnabled = false;
+    private int mQuietHoursStart = 0;
+    private int mQuietHoursEnd = 0;
+
     public BatteryService(Context context, LightsService lights) {
         mContext = context;
         mHandler = new Handler(true /*async*/);
@@ -727,6 +732,12 @@ public final class BatteryService extends Binder {
          * Synchronize on BatteryService.
          */
         public void updateLightsLocked() {
+            // mBatteryProps could be null on startup (called by SettingsObserver)
+            if (mBatteryProps == null) {
+                Slog.w(TAG, "updateLightsLocked: mBatteryProps is null; skipping");
+                return;
+            }
+
             final int level = mBatteryProps.batteryLevel;
             final int status = mBatteryProps.batteryStatus;
             if (!mLightEnabled) {
@@ -843,6 +854,14 @@ public final class BatteryService extends Binder {
             mBatteryFullARGB = Settings.System.getInt(resolver,
                     Settings.System.BATTERY_LIGHT_FULL_COLOR,
                     res.getInteger(com.android.internal.R.integer.config_notificationsBatteryFullARGB));
+
+            // Quiet Hours
+            mQuietHoursEnabled = Settings.System.getIntForUser(resolver,
+                    Settings.System.QUIET_HOURS_ENABLED, 0, UserHandle.USER_CURRENT_OR_SELF) != 0;
+            mQuietHoursStart = Settings.System.getIntForUser(resolver,
+                    Settings.System.QUIET_HOURS_START, 0, UserHandle.USER_CURRENT_OR_SELF);
+            mQuietHoursEnd = Settings.System.getIntForUser(resolver,
+                    Settings.System.QUIET_HOURS_END, 0, UserHandle.USER_CURRENT_OR_SELF);
 
             updateLedPulse();
         }

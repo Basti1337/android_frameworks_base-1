@@ -204,7 +204,6 @@
     <protected-broadcast android:name="android.intent.action.PROXY_CHANGE" />
 
     <protected-broadcast android:name="android.os.UpdateLock.UPDATE_LOCK_CHANGED" />
-    <protected-broadcast android:name="android.intent.action.NAVBAR_EDIT" />
 
     <protected-broadcast android:name="android.intent.action.DREAMING_STARTED" />
     <protected-broadcast android:name="android.intent.action.DREAMING_STOPPED" />
@@ -1727,6 +1726,13 @@
         android:label="@string/permlab_manageCaCertificates"
         android:description="@string/permdesc_manageCaCertificates" />
 
+    <!-- Allows an application to access Superuser binary. This is a hack to avoid
+         Android Issue #25906 {@link https://code.google.com/p/android/issues/detail?id=25906 } -->
+    <permission android:name="android.permission.ACCESS_SUPERUSER"
+        android:protectionLevel="normal"
+        android:label="@string/permlab_accessSuperuser"
+        android:description="@string/permdesc_accessSuperuser" />
+
     <!-- ========================================= -->
     <!-- Permissions for special development tools -->
     <!-- ========================================= -->
@@ -2219,14 +2225,6 @@
         android:label="@string/permlab_broadcastPackageRemoved"
         android:description="@string/permdesc_broadcastPackageRemoved"
         android:protectionLevel="signature" />
-
- <!-- Allows an application to cancel notifications from other apps
-         -->
-    <permission android:name="android.permission.CANCEL_NOTIFICATIONS"
-        android:permissionGroup="android.permission-group.SYSTEM_TOOLS"
-        android:protectionLevel="signature|system"
-        android:label="@string/permlab_cancelNotifications"
-        android:description="@string/permdesc_cancelNotifications" />
 
     <!-- Allows an application to intercept and rewrite outgoing SMS
          @hide -->

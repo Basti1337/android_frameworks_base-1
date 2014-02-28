@@ -209,9 +209,9 @@ public class VibratorService extends IVibratorService.Stub
             return;
         }
 
-        Vibration vib = new Vibration(token, milliseconds, uid, packageName);
-
         milliseconds = userDuration(milliseconds);
+
+        Vibration vib = new Vibration(token, milliseconds, uid, packageName);
 
         final long ident = Binder.clearCallingIdentity();
         try {
