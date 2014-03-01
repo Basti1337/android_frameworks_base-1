@@ -332,6 +332,11 @@ interface IWindowManager
      */
     void toggleStatusBar();
 
+    /**
+     * @hide
+     */
+    void updateStatusBarNavBarHeight();
+
     /** SPLIT VIEW **/
     boolean isTaskSplitView(int taskId);
     void setTaskSplitView(int taskId, boolean split);
