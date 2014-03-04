@@ -773,7 +773,7 @@ public abstract class BaseStatusBar extends SystemUI implements
         if(mCustomRecent)
             cRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
         else
-            mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView(),mExpandedDesktopStyle);
+            mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
         }
     }
 
