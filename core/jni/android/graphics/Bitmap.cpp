@@ -23,12 +23,6 @@
     #define TRACE_BITMAP(code)
 #endif
 
-#ifdef USE_NEON_BITMAP_OPTS
-    #define __BITMAP_OPTS __attribute__((optimize("-ftree-vectorize", "-fprefetch-loop-arrays")))
-#else
-    #define __BITMAP_OPTS
-#endif
-
 ///////////////////////////////////////////////////////////////////////////////
 // Conversions to/from SkColor, for get/setPixels, and the create method, which
 // is basically like setPixels
@@ -36,7 +30,7 @@
 typedef void (*FromColorProc)(void* dst, const SkColor src[], int width,
                               int x, int y);
 
-static void __BITMAP_OPTS FromColor_D32(void* dst, const SkColor src[], int width,
+static void FromColor_D32(void* dst, const SkColor src[], int width,
                           int, int) {
     SkPMColor* d = (SkPMColor*)dst;
 
@@ -45,7 +39,7 @@ static void __BITMAP_OPTS FromColor_D32(void* dst, const SkColor src[], int widt
     }
 }
 
-static void __BITMAP_OPTS FromColor_D32_Raw(void* dst, const SkColor src[], int width,
+static void FromColor_D32_Raw(void* dst, const SkColor src[], int width,
                           int, int) {
     // SkColor's ordering may be different from SkPMColor
     if (SK_COLOR_MATCHES_PMCOLOR_BYTE_ORDER) {
@@ -62,7 +56,7 @@ static void __BITMAP_OPTS FromColor_D32_Raw(void* dst, const SkColor src[], int 
     }
 }
 
-static void __BITMAP_OPTS FromColor_D565(void* dst, const SkColor src[], int width,
+static void FromColor_D565(void* dst, const SkColor src[], int width,
                            int x, int y) {
     uint16_t* d = (uint16_t*)dst;
 
@@ -74,7 +68,7 @@ static void __BITMAP_OPTS FromColor_D565(void* dst, const SkColor src[], int wid
     }
 }
 
-static void __BITMAP_OPTS FromColor_D4444(void* dst, const SkColor src[], int width,
+static void FromColor_D4444(void* dst, const SkColor src[], int width,
                             int x, int y) {
     SkPMColor16* d = (SkPMColor16*)dst;
 
@@ -86,7 +80,7 @@ static void __BITMAP_OPTS FromColor_D4444(void* dst, const SkColor src[], int wi
     }
 }
 
-static void __BITMAP_OPTS FromColor_D4444_Raw(void* dst, const SkColor src[], int width,
+static void FromColor_D4444_Raw(void* dst, const SkColor src[], int width,
                             int x, int y) {
     SkPMColor16* d = (SkPMColor16*)dst;
 
@@ -152,7 +146,7 @@ bool GraphicsJNI::SetPixels(JNIEnv* env, jintArray srcColors, int srcOffset, int
 typedef void (*ToColorProc)(SkColor dst[], const void* src, int width,
                             SkColorTable*);
 
-static void __BITMAP_OPTS ToColor_S32_Alpha(SkColor dst[], const void* src, int width,
+static void ToColor_S32_Alpha(SkColor dst[], const void* src, int width,
                               SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor* s = (const SkPMColor*)src;
@@ -161,7 +155,7 @@ static void __BITMAP_OPTS ToColor_S32_Alpha(SkColor dst[], const void* src, int 
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S32_Raw(SkColor dst[], const void* src, int width,
+static void ToColor_S32_Raw(SkColor dst[], const void* src, int width,
                               SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor* s = (const SkPMColor*)src;
@@ -172,7 +166,7 @@ static void __BITMAP_OPTS ToColor_S32_Raw(SkColor dst[], const void* src, int wi
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S32_Opaque(SkColor dst[], const void* src, int width,
+static void ToColor_S32_Opaque(SkColor dst[], const void* src, int width,
                                SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor* s = (const SkPMColor*)src;
@@ -183,7 +177,7 @@ static void __BITMAP_OPTS ToColor_S32_Opaque(SkColor dst[], const void* src, int
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S4444_Alpha(SkColor dst[], const void* src, int width,
+static void ToColor_S4444_Alpha(SkColor dst[], const void* src, int width,
                                 SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor16* s = (const SkPMColor16*)src;
@@ -192,7 +186,7 @@ static void __BITMAP_OPTS ToColor_S4444_Alpha(SkColor dst[], const void* src, in
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S4444_Raw(SkColor dst[], const void* src, int width,
+static void ToColor_S4444_Raw(SkColor dst[], const void* src, int width,
                                 SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor16* s = (const SkPMColor16*)src;
@@ -203,7 +197,7 @@ static void __BITMAP_OPTS ToColor_S4444_Raw(SkColor dst[], const void* src, int 
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S4444_Opaque(SkColor dst[], const void* src, int width,
+static void ToColor_S4444_Opaque(SkColor dst[], const void* src, int width,
                                  SkColorTable*) {
     SkASSERT(width > 0);
     const SkPMColor16* s = (const SkPMColor16*)src;
@@ -214,7 +208,7 @@ static void __BITMAP_OPTS ToColor_S4444_Opaque(SkColor dst[], const void* src, i
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_S565(SkColor dst[], const void* src, int width,
+static void ToColor_S565(SkColor dst[], const void* src, int width,
                          SkColorTable*) {
     SkASSERT(width > 0);
     const uint16_t* s = (const uint16_t*)src;
@@ -225,7 +219,7 @@ static void __BITMAP_OPTS ToColor_S565(SkColor dst[], const void* src, int width
     } while (--width != 0);
 }
 
-static void __BITMAP_OPTS ToColor_SI8_Alpha(SkColor dst[], const void* src, int width,
+static void ToColor_SI8_Alpha(SkColor dst[], const void* src, int width,
                               SkColorTable* ctable) {
     SkASSERT(width > 0);
     const uint8_t* s = (const uint8_t*)src;
@@ -236,7 +230,7 @@ static void __BITMAP_OPTS ToColor_SI8_Alpha(SkColor dst[], const void* src, int 
     ctable->unlockColors(false);
 }
 
-static void __BITMAP_OPTS ToColor_SI8_Raw(SkColor dst[], const void* src, int width,
+static void ToColor_SI8_Raw(SkColor dst[], const void* src, int width,
                               SkColorTable* ctable) {
     SkASSERT(width > 0);
     const uint8_t* s = (const uint8_t*)src;
@@ -249,7 +243,7 @@ static void __BITMAP_OPTS ToColor_SI8_Raw(SkColor dst[], const void* src, int wi
     ctable->unlockColors(false);
 }
 
-static void __BITMAP_OPTS ToColor_SI8_Opaque(SkColor dst[], const void* src, int width,
+static void ToColor_SI8_Opaque(SkColor dst[], const void* src, int width,
                                SkColorTable* ctable) {
     SkASSERT(width > 0);
     const uint8_t* s = (const uint8_t*)src;

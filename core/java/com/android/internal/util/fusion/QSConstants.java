@@ -39,8 +39,8 @@ public class QSConstants {
         public static final String TILE_SLEEP = "toggleSleepMode";
         public static final String TILE_LTE = "toggleLte";
         public static final String TILE_NFC = "toggleNfc";
-        public static final String TILE_QUIETHOURS = "toggleQuietHours";
         public static final String TILE_QUICKRECORD = "toggleQuickRecord";
+        public static final String TILE_QUIETHOURS = "toggleQuietHours";
         public static final String TILE_VOLUME = "toggleVolume";
         public static final String TILE_EXPANDEDDESKTOP = "toggleExpandedDesktop";
         public static final String TILE_MUSIC = "toggleMusic";
@@ -48,7 +48,6 @@ public class QSConstants {
         public static final String TILE_THEME = "toggleTheme";
         public static final String TILE_CUSTOM = "toggleCustom";
         public static final String TILE_CONTACT = "tileContact";
-        public static final String TILE_FCHARGE = "toggleFCharge";
 
         // dynamic tiles
         public static final String TILE_ALARM = "toggleAlarm";
@@ -73,8 +72,6 @@ public class QSConstants {
             TILES_DEFAULT.add(TILE_AIRPLANE);
             TILES_DEFAULT.add(TILE_BLUETOOTH);
             TILES_DEFAULT.add(TILE_LOCATION);
-            TILES_DEFAULT.add(TILE_EXPANDEDDESKTOP);
-            TILES_DEFAULT.add(TILE_THEME);
         }
 
         public static ArrayList<String> DYNAMIC_TILES_DEFAULT = new ArrayList<String>();

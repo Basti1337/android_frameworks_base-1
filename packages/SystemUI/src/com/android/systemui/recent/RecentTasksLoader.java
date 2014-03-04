@@ -31,7 +31,6 @@ import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Process;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;

@@ -31,6 +31,7 @@ import java.util.Map;
 
 import android.app.AppOpsManager;
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.AsyncTask;
@@ -70,14 +71,6 @@ public class AppOpsService extends IAppOpsService.Stub {
     final AtomicFile mFile;
     final Handler mHandler;
 
-    private static final int[] PRIVACY_GUARD_OP_STATES = new int[] {
-        AppOpsManager.OP_COARSE_LOCATION,
-        AppOpsManager.OP_READ_CALL_LOG,
-        AppOpsManager.OP_READ_CONTACTS,
-        AppOpsManager.OP_READ_CALENDAR,
-        AppOpsManager.OP_READ_SMS
-    };
-
     boolean mWriteScheduled;
     final Runnable mWriteRunner = new Runnable() {
         public void run() {
@@ -116,8 +109,6 @@ public class AppOpsService extends IAppOpsService.Stub {
         public long time;
         public long rejectTime;
         public int nesting;
-        public int allowedCount;
-        public int ignoredCount;
 
         public Op(int _uid, String _packageName, int _op) {
             uid = _uid;
@@ -215,14 +206,12 @@ public class AppOpsService extends IAppOpsService.Stub {
                 Iterator<Ops> it = pkgs.values().iterator();
                 while (it.hasNext()) {
                     Ops ops = it.next();
-                    int curUid = -1;
+                    int curUid;
                     try {
                         curUid = mContext.getPackageManager().getPackageUid(ops.packageName,
                                 UserHandle.getUserId(ops.uid));
                     } catch (NameNotFoundException e) {
-                        if ("android".equals(ops.packageName)) {
-                            curUid = Process.SYSTEM_UID;
-                        }
+                        curUid = -1;
                     }
                     if (curUid != ops.uid) {
                         Slog.i(TAG, "Pruning old package " + ops.packageName
@@ -285,8 +274,7 @@ public class AppOpsService extends IAppOpsService.Stub {
             for (int j=0; j<pkgOps.size(); j++) {
                 Op curOp = pkgOps.valueAt(j);
                 resOps.add(new AppOpsManager.OpEntry(curOp.op, curOp.mode, curOp.time,
-                        curOp.rejectTime, curOp.duration,
-                        curOp.allowedCount, curOp.ignoredCount));
+                        curOp.rejectTime, curOp.duration));
             }
         } else {
             for (int j=0; j<ops.length; j++) {
@@ -296,8 +284,7 @@ public class AppOpsService extends IAppOpsService.Stub {
                         resOps = new ArrayList<AppOpsManager.OpEntry>();
                     }
                     resOps.add(new AppOpsManager.OpEntry(curOp.op, curOp.mode, curOp.time,
-                            curOp.rejectTime, curOp.duration,
-                            curOp.allowedCount, curOp.ignoredCount));
+                            curOp.rejectTime, curOp.duration));
                 }
             }
         }
@@ -600,14 +587,12 @@ public class AppOpsService extends IAppOpsService.Stub {
                 if (DEBUG) Log.d(TAG, "noteOperation: reject #" + op.mode + " for code "
                         + switchCode + " (" + code + ") uid " + uid + " package " + packageName);
                 op.rejectTime = System.currentTimeMillis();
-                op.ignoredCount++;
                 return switchOp.mode;
             }
             if (DEBUG) Log.d(TAG, "noteOperation: allowing code " + code + " uid " + uid
                     + " package " + packageName);
             op.time = System.currentTimeMillis();
             op.rejectTime = 0;
-            op.allowedCount++;
             return AppOpsManager.MODE_ALLOWED;
         }
     }
@@ -631,7 +616,6 @@ public class AppOpsService extends IAppOpsService.Stub {
                 if (DEBUG) Log.d(TAG, "startOperation: reject #" + op.mode + " for code "
                         + switchCode + " (" + code + ") uid " + uid + " package " + packageName);
                 op.rejectTime = System.currentTimeMillis();
-                op.ignoredCount++;
                 return switchOp.mode;
             }
             if (DEBUG) Log.d(TAG, "startOperation: allowing code " + code + " uid " + uid
@@ -639,7 +623,6 @@ public class AppOpsService extends IAppOpsService.Stub {
             if (op.nesting == 0) {
                 op.time = System.currentTimeMillis();
                 op.rejectTime = 0;
-                op.allowedCount++;
                 op.duration = -1;
             }
             op.nesting++;
@@ -717,8 +700,6 @@ public class AppOpsService extends IAppOpsService.Stub {
             packageName = "root";
         } else if (uid == Process.SHELL_UID) {
             packageName = "com.android.shell";
-        } else if (uid == Process.SYSTEM_UID) {
-            packageName = "android";
         }
         Ops ops = pkgOps.get(packageName);
         if (ops == null) {
@@ -727,7 +708,7 @@ public class AppOpsService extends IAppOpsService.Stub {
             }
             // This is the first time we have seen this package name under this uid,
             // so let's make sure it is valid.
-            if (uid != 0 && uid != Process.SYSTEM_UID) {
+            if (uid != 0) {
                 final long ident = Binder.clearCallingIdentity();
                 try {
                     int pkgUid = -1;
@@ -895,19 +876,7 @@ public class AppOpsService extends IAppOpsService.Stub {
 
             String tagName = parser.getName();
             if (tagName.equals("op")) {
-                int code = Integer.parseInt(parser.getAttributeValue(null, "n"));
-                // use op name string if it exists
-                String codeNameStr = parser.getAttributeValue(null, "ns");
-                if (codeNameStr != null) {
-                    // returns OP_NONE if it could not be mapped
-                    code = AppOpsManager.nameToOp(codeNameStr);
-                }
-                // skip op codes that are out of bounds
-                if (code == AppOpsManager.OP_NONE
-                        || code >= AppOpsManager._NUM_OP) {
-                    continue;
-                }
-                Op op = new Op(uid, pkgName, code);
+                Op op = new Op(uid, pkgName, Integer.parseInt(parser.getAttributeValue(null, "n")));
                 String mode = parser.getAttributeValue(null, "m");
                 if (mode != null) {
                     op.mode = Integer.parseInt(mode);
@@ -923,14 +892,6 @@ public class AppOpsService extends IAppOpsService.Stub {
                 String dur = parser.getAttributeValue(null, "d");
                 if (dur != null) {
                     op.duration = Integer.parseInt(dur);
-                }
-                String allowed = parser.getAttributeValue(null, "ac");
-                if (allowed != null) {
-                    op.allowedCount = Integer.parseInt(allowed);
-                }
-                String ignored = parser.getAttributeValue(null, "ic");
-                if (ignored != null) {
-                    op.ignoredCount = Integer.parseInt(ignored);
                 }
                 HashMap<String, Ops> pkgOps = mUidOps.get(uid);
                 if (pkgOps == null) {
@@ -988,7 +949,6 @@ public class AppOpsService extends IAppOpsService.Stub {
                             AppOpsManager.OpEntry op = ops.get(j);
                             out.startTag(null, "op");
                             out.attribute(null, "n", Integer.toString(op.getOp()));
-                            out.attribute(null, "ns", AppOpsManager.opToName(op.getOp()));
                             if (op.getMode() != AppOpsManager.opToDefaultMode(op.getOp())) {
                                 out.attribute(null, "m", Integer.toString(op.getMode()));
                             }
@@ -1003,14 +963,6 @@ public class AppOpsService extends IAppOpsService.Stub {
                             int dur = op.getDuration();
                             if (dur != 0) {
                                 out.attribute(null, "d", Integer.toString(dur));
-                            }
-                            int allowed = op.getAllowedCount();
-                            if (allowed != 0) {
-                                out.attribute(null, "ac", Integer.toString(allowed));
-                            }
-                            int ignored = op.getIgnoredCount();
-                            if (ignored != 0) {
-                                out.attribute(null, "ic", Integer.toString(ignored));
                             }
                             out.endTag(null, "op");
                         }
@@ -1131,45 +1083,133 @@ public class AppOpsService extends IAppOpsService.Stub {
     }
 
     @Override
-    public boolean getPrivacyGuardSettingForPackage(int uid, String packageName) {
-        for (int op : PRIVACY_GUARD_OP_STATES) {
-            int switchOp = AppOpsManager.opToSwitch(op);
-            if (checkOperation(op, uid, packageName)
-                    != AppOpsManager.MODE_ALLOWED) {
-                return true;
+    public List<Integer> getPrivacyGuardOpsForPackage(String packageName) {
+        PackageInfo pkgInfo;
+        List<Integer> ops = new ArrayList<Integer>();
+        try {
+            pkgInfo = mContext.getPackageManager()
+                .getPackageInfo(packageName, PackageManager.GET_PERMISSIONS);
+        } catch (NameNotFoundException e) {
+            return ops;
+        }
+        // we need to get all relevant permissions of the package.
+        // Only calling getOpsForPackage does not return ops
+        // with AppOpsManager.MODE_ALLOWED which never got
+        // granted and do not show up in Ops statistics
+        final String[] requestedPermissions = pkgInfo.requestedPermissions;
+        if (requestedPermissions != null) {
+            for (String requested : requestedPermissions) {
+                int curOp = AppOpsManager.getPrivacyGuardOp(requested);
+                boolean duplicate = false;
+                // check for duplicates
+                for (int op : ops) {
+                    if (op == curOp) {
+                        duplicate = true;
+                    }
+                }
+                if (curOp != AppOpsManager.OP_NONE && !duplicate) {
+                    ops.add(curOp);
+                }
             }
         }
-        return false;
+        return ops;
     }
 
     @Override
-    public void setPrivacyGuardSettingForPackage(int uid, String packageName, boolean state) {
-        for (int op : PRIVACY_GUARD_OP_STATES) {
-            int switchOp = AppOpsManager.opToSwitch(op);
-            setMode(switchOp, uid, packageName, state
-                    ? AppOpsManager.MODE_IGNORED : AppOpsManager.MODE_ALLOWED);
-        }
-    }
+    public int getPrivacyGuardSettingForPackage(int uid, String packageName) {
+        int privacyGuardState;
+        boolean pgDetect;
+        boolean isCustomOpPresent = false;
 
-    @Override
-    public void resetCounters() {
-        mContext.enforcePermission(android.Manifest.permission.UPDATE_APP_OPS_STATS,
-                Binder.getCallingPid(), Binder.getCallingUid(), null);
-        synchronized (this) {
-            for (int i=0; i<mUidOps.size(); i++) {
-                HashMap<String, Ops> packages = mUidOps.valueAt(i);
-                for (Map.Entry<String, Ops> ent : packages.entrySet()) {
-                    String packageName = ent.getKey();
-                    Ops pkgOps = ent.getValue();
-                    for (int j=0; j<pkgOps.size(); j++) {
-                        Op curOp = pkgOps.valueAt(j);
-                        curOp.allowedCount = 0;
-                        curOp.ignoredCount = 0;
+        List<AppOpsManager.PackageOps> packageOps =
+            getOpsForPackage(uid, packageName, null);
+        List<Integer> privacyGuardOps = getPrivacyGuardOpsForPackage(packageName);
+        List<Integer> privacyGuardOpsHelper = new ArrayList<Integer>(privacyGuardOps);
+
+        // get disabled Ops and check for custom Op changes
+        if (packageOps != null) {
+            for (AppOpsManager.OpEntry op : packageOps.get(0).getOps()) {
+                pgDetect = false;
+                if (checkOperation(op.getOp(), uid, packageName)
+                    == AppOpsManager.MODE_IGNORED) {
+                    for (int pgOp : privacyGuardOps) {
+                        if (AppOpsManager.opToSwitch(op.getOp()) == pgOp) {
+                            privacyGuardOpsHelper.remove((Integer) pgOp);
+                            pgDetect = true;
+                            break;
+                        }
+                    }
+                    if (!pgDetect) {
+                        isCustomOpPresent = true;
                     }
                 }
             }
-            // ensure the counter reset persists
-            scheduleWriteNowLocked();
+        }
+
+        // get privacy guard state
+        if (!privacyGuardOps.isEmpty()
+            && privacyGuardOps.size() != privacyGuardOpsHelper.size()) {
+            if (privacyGuardOpsHelper.isEmpty()) {
+                privacyGuardState = AppOpsManager.PRIVACY_GUARD_ENABLED;
+            } else {
+                privacyGuardState = AppOpsManager.PRIVACY_GUARD_CUSTOM;
+            }
+        } else {
+            privacyGuardState = AppOpsManager.PRIVACY_GUARD_DISABLED;
+        }
+
+        // return current mode
+        switch (privacyGuardState) {
+            case AppOpsManager.PRIVACY_GUARD_ENABLED:
+                if (isCustomOpPresent) {
+                    return AppOpsManager.PRIVACY_GUARD_ENABLED_PLUS;
+                } else {
+                    return AppOpsManager.PRIVACY_GUARD_ENABLED;
+                }
+            case AppOpsManager.PRIVACY_GUARD_CUSTOM:
+                if (isCustomOpPresent) {
+                    return AppOpsManager.PRIVACY_GUARD_CUSTOM_PLUS;
+                } else {
+                    return AppOpsManager.PRIVACY_GUARD_CUSTOM;
+                }
+            case AppOpsManager.PRIVACY_GUARD_DISABLED:
+                if (isCustomOpPresent) {
+                    return AppOpsManager.PRIVACY_GUARD_DISABLED_PLUS;
+                } else {
+                    return AppOpsManager.PRIVACY_GUARD_DISABLED;
+                }
+        }
+        return AppOpsManager.PRIVACY_GUARD_DISABLED;
+    }
+
+    @Override
+    public void setPrivacyGuardSettingForPackage(int uid, String packageName,
+            boolean state, boolean forceAll) {
+        List<Integer> switchOps;
+        if (!forceAll) {
+            // retrieve specific privacy guard permissions
+            switchOps = getPrivacyGuardOpsForPackage(packageName);
+        } else {
+            // if user want to enable all permissions on the package
+            // we need to retrieve the disabled ops.
+            // All ops are retrieved via getOpsForPackage
+            // which are flagged with AppOpsManager.MODE_IGNORED
+            switchOps = new ArrayList<Integer>();
+            List<AppOpsManager.PackageOps> packageOps =
+                getOpsForPackage(uid, packageName, null);
+            if (packageOps != null) {
+                for (AppOpsManager.OpEntry op : packageOps.get(0).getOps()) {
+                    if (checkOperation(op.getOp(), uid, packageName)
+                        == AppOpsManager.MODE_IGNORED) {
+                        switchOps.add(AppOpsManager.opToSwitch(op.getOp()));
+                    }
+                }
+            }
+        }
+
+        for (int op : switchOps) {
+            setMode(op, uid, packageName, state
+                    ? AppOpsManager.MODE_IGNORED : AppOpsManager.MODE_ALLOWED);
         }
     }
 }

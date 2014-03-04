@@ -15,8 +15,6 @@
 
 package com.android.server;
 
-import android.provider.Settings.SettingNotFoundException;
-
 import com.android.internal.app.ThemeUtils;
 import com.android.internal.content.PackageMonitor;
 import com.android.internal.inputmethod.InputMethodUtils;
@@ -1671,14 +1669,14 @@ public class InputMethodManagerService extends IInputMethodManager.Stub
             mCurMethodId = null;
             unbindCurrentMethodLocked(true, false);
         }
-        // code to disable the IME switcher with config_show_cmIMESwitcher set = false
+        // code to disable the IME switcher with config_show_IMESwitcher set = false
         try {
             mShowOngoingImeSwitcherForPhones =
                 Settings.System.getIntForUser(mContext.getContentResolver(),
                 Settings.System.STATUS_BAR_IME_SWITCHER, UserHandle.USER_CURRENT) == 1;
         } catch (SettingNotFoundException e) {
             mShowOngoingImeSwitcherForPhones = mRes.getBoolean(
-                com.android.internal.R.bool.config_show_cmIMESwitcher);
+                com.android.internal.R.bool.config_show_IMESwitcher);
         }
     }
 

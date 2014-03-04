@@ -29,7 +29,6 @@ import com.android.server.display.DisplayManagerService;
 import com.android.server.dreams.DreamManagerService;
 
 import android.Manifest;
-import android.app.AppOpsManager;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
 import android.content.Context;
@@ -173,9 +172,6 @@ public final class PowerManagerService extends IPowerManager.Stub
     // effectively and terminate the dream.
     private static final int DREAM_BATTERY_LEVEL_DRAIN_CUTOFF = 5;
 
-    // Max time (microseconds) to allow a CPU boost for
-    private static final int MAX_CPU_BOOST_TIME = 5000000;
-
     private Context mContext;
     private LightsService mLightsService;
     private BatteryService mBatteryService;
@@ -306,7 +302,7 @@ public final class PowerManagerService extends IPowerManager.Stub
     // The current dock state.
     private int mDockState = Intent.EXTRA_DOCK_STATE_UNDOCKED;
 
-    // True if the device should wake up when plugged or unplugged (default from config.xml)
+    // True if the device should wake up when plugged or unplugged.
     private boolean mWakeUpWhenPluggedOrUnpluggedConfig;
 
     // True if the device should suspend when the screen is off due to proximity.
@@ -348,9 +344,6 @@ public final class PowerManagerService extends IPowerManager.Stub
     // The stay on while plugged in setting.
     // A bitfield of battery conditions under which to make the screen stay on.
     private int mStayOnWhilePluggedInSetting;
-
-    // True if the device should wake up when plugged or unplugged
-    private int mWakeUpWhenPluggedOrUnpluggedSetting;
 
     // True if the device should stay on.
     private boolean mStayOn;
@@ -417,7 +410,6 @@ public final class PowerManagerService extends IPowerManager.Stub
     private static native void nativeReleaseSuspendBlocker(String name);
     private static native void nativeSetInteractive(boolean enable);
     private static native void nativeSetAutoSuspend(boolean enable);
-    private static native void nativeCpuBoost(int duration);
     private boolean mKeyboardVisible = false;
 
     public PowerManagerService() {
@@ -551,14 +543,14 @@ public final class PowerManagerService extends IPowerManager.Stub
             resolver.registerContentObserver(Settings.Global.getUriFor(
                     Settings.Global.STAY_ON_WHILE_PLUGGED_IN),
                     false, mSettingsObserver, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.Global.getUriFor(
-                    Settings.Global.WAKE_WHEN_PLUGGED_OR_UNPLUGGED),
-                    false, mSettingsObserver, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.SCREEN_BRIGHTNESS),
                     false, mSettingsObserver, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.SCREEN_BRIGHTNESS_MODE),
+                    false, mSettingsObserver, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.SYSTEM_POWER_CRT_MODE),
                     false, mSettingsObserver, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.AUTO_BRIGHTNESS_RESPONSIVENESS),
@@ -571,9 +563,6 @@ public final class PowerManagerService extends IPowerManager.Stub
                     false, mSettingsObserver, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.BUTTON_BACKLIGHT_TIMEOUT),
-                    false, mSettingsObserver, UserHandle.USER_ALL);
-	    resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.SYSTEM_POWER_CRT_MODE),
                     false, mSettingsObserver, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.WAKELOCK_BLOCKING_ENABLED),
@@ -627,10 +616,7 @@ public final class PowerManagerService extends IPowerManager.Stub
                 UserHandle.USER_CURRENT);
         mStayOnWhilePluggedInSetting = Settings.Global.getInt(resolver,
                 Settings.Global.STAY_ON_WHILE_PLUGGED_IN, BatteryManager.BATTERY_PLUGGED_AC);
-        mWakeUpWhenPluggedOrUnpluggedSetting = Settings.Global.getInt(resolver,
-                Settings.Global.WAKE_WHEN_PLUGGED_OR_UNPLUGGED,
-                (mWakeUpWhenPluggedOrUnpluggedConfig ? 1 : 0));
-	mElectronBeamMode = Settings.System.getIntForUser(resolver,
+        mElectronBeamMode = Settings.System.getIntForUser(resolver,
                 Settings.System.SYSTEM_POWER_CRT_MODE,
                 1, UserHandle.USER_CURRENT);
 
@@ -681,7 +667,6 @@ public final class PowerManagerService extends IPowerManager.Stub
         mButtonTimeout = Settings.System.getIntForUser(resolver,
                 Settings.System.BUTTON_BACKLIGHT_TIMEOUT,
                 DEFAULT_BUTTON_ON_DURATION, UserHandle.USER_CURRENT);
-
         mButtonBrightness = Settings.System.getIntForUser(resolver,
                 Settings.System.BUTTON_BRIGHTNESS, mButtonBrightnessSettingDefault,
                 UserHandle.USER_CURRENT);
@@ -724,19 +709,6 @@ public final class PowerManagerService extends IPowerManager.Stub
 
         final int uid = Binder.getCallingUid();
         final int pid = Binder.getCallingPid();
-
-        try {
-            if (mAppOps.checkOperation(AppOpsManager.OP_WAKE_LOCK, uid, packageName)
-                    != AppOpsManager.MODE_ALLOWED) {
-                Slog.d(TAG, "acquireWakeLock: ignoring request from " + packageName);
-                // For (ignore) accounting purposes
-                mAppOps.noteOperation(AppOpsManager.OP_WAKE_LOCK, uid, packageName);
-                // silent return
-                return;
-            }
-        } catch (RemoteException e) {
-        }
-
         final long ident = Binder.clearCallingIdentity();
         try {
             acquireWakeLockInternal(lock, flags, tag, packageName, ws, uid, pid);
@@ -1165,6 +1137,7 @@ public final class PowerManagerService extends IPowerManager.Stub
             if (mKeyboardVisible != visible) {
                 mKeyboardVisible = visible;
                 if (!visible) {
+                    mKeyboardLight.turnOff();
                     // If hiding keyboard, turn off leds
                     setKeyboardLight(false, 1);
                     setKeyboardLight(false, 2);
@@ -1485,9 +1458,8 @@ public final class PowerManagerService extends IPowerManager.Stub
 
     private boolean shouldWakeUpWhenPluggedOrUnpluggedLocked(
             boolean wasPowered, int oldPlugType, boolean dockedOnWirelessCharger) {
-
-        // Don't wake when powered if disabled in settings.
-        if (mWakeUpWhenPluggedOrUnpluggedSetting == 0) {
+        // Don't wake when powered unless configured to do so.
+        if (!mWakeUpWhenPluggedOrUnpluggedConfig) {
             return false;
         }
 
@@ -1509,6 +1481,12 @@ public final class PowerManagerService extends IPowerManager.Stub
         // If already dreaming and becoming powered, then don't wake.
         if (mIsPowered && (mWakefulness == WAKEFULNESS_NAPPING
                 || mWakefulness == WAKEFULNESS_DREAMING)) {
+            return false;
+        }
+
+        if (Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.WAKEUP_WHEN_PLUGGED_UNPLUGGED, 1,
+                UserHandle.USER_CURRENT) == 0) {
             return false;
         }
 
@@ -1629,6 +1607,7 @@ public final class PowerManagerService extends IPowerManager.Stub
                         mKeyboardLight.setBrightness(mKeyboardVisible ? keyboardBrightness : 0);
                         if (mButtonTimeout != 0 && now > mLastUserActivityTime + mButtonTimeout) {
                             mButtonsLight.setBrightness(0);
+                            mKeyboardLight.setBrightness(0);
                         } else {
                             mButtonsLight.setBrightness(buttonBrightness);
                             if (buttonBrightness != 0 && mButtonTimeout != 0) {
@@ -1978,9 +1957,9 @@ public final class PowerManagerService extends IPowerManager.Stub
 
             mDisplayPowerRequest.blockScreenOn = mScreenOnBlocker.isHeld();
 
-            mDisplayPowerRequest.responsitivityFactor = mAutoBrightnessResponsitivityFactor;
+            mDisplayPowerRequest.electronBeamMode = mElectronBeamMode;
 
-	    mDisplayPowerRequest.electronBeamMode = mElectronBeamMode;
+            mDisplayPowerRequest.responsitivityFactor = mAutoBrightnessResponsitivityFactor;
 
             mDisplayReady = mDisplayPowerController.requestPowerState(mDisplayPowerRequest,
                     mRequestWaitForNegativeProximity);
@@ -2194,20 +2173,6 @@ public final class PowerManagerService extends IPowerManager.Stub
             shutdownOrRebootInternal(true, confirm, null, wait);
         } finally {
             Binder.restoreCallingIdentity(ident);
-        }
-    }
-
-    /**
-     * Boost the CPU
-     * @param duration Duration to boost the CPU for, in milliseconds.
-     * @hide
-     */
-    @Override // Binder call
-    public void cpuBoost(int duration) {
-        if (duration > 0 && duration <= MAX_CPU_BOOST_TIME) {
-            nativeCpuBoost(duration);
-        } else {
-            Log.e(TAG, "Invalid boost duration: " + duration);
         }
     }
 

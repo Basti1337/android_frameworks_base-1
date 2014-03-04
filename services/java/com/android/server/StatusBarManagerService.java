@@ -195,7 +195,6 @@ public class StatusBarManagerService extends IStatusBarService.Stub
         } catch (RemoteException ex) {
         }
     }
-
     public void setIcon(String slot, String iconPackage, int iconId, int iconLevel,
             String contentDescription) {
         enforceStatusBar();
@@ -727,5 +726,4 @@ public class StatusBarManagerService extends IStatusBarService.Stub
             */
         }
     };
-
 }

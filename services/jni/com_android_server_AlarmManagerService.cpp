@@ -91,7 +91,7 @@ static void android_server_AlarmManagerService_clear(JNIEnv* env, jobject obj, j
 	}
 }
 
-static jint android_server_AlarmManagerService_waitForAlarm(JNIEnv*, jobject, jint fd)
+static jint android_server_AlarmManagerService_waitForAlarm(JNIEnv* env, jobject obj, jint fd)
 {
     int result = 0;
 
@@ -111,12 +111,12 @@ static jint android_server_AlarmManagerService_waitForAlarm(JNIEnv*, jobject, ji
 
 static JNINativeMethod sMethods[] = {
      /* name, signature, funcPtr */
-    {"init", "()I", (void*)android_server_AlarmManagerService_init},
-    {"close", "(I)V", (void*)android_server_AlarmManagerService_close},
-    {"set", "(IIJJ)V", (void*)android_server_AlarmManagerService_set},
-    {"clear", "(IIJJ)V", (void*)android_server_AlarmManagerService_clear},
-    {"waitForAlarm", "(I)I", (void*)android_server_AlarmManagerService_waitForAlarm},
-    {"setKernelTimezone", "(II)I", (void*)android_server_AlarmManagerService_setKernelTimezone},
+	 {"init", "()I", (void*)android_server_AlarmManagerService_init},
+	 {"close", "(I)V", (void*)android_server_AlarmManagerService_close},
+	 {"set", "(IIJJ)V", (void*)android_server_AlarmManagerService_set},
+	 {"clear", "(IIJJ)V", (void*)android_server_AlarmManagerService_clear},
+     {"waitForAlarm", "(I)I", (void*)android_server_AlarmManagerService_waitForAlarm},
+     {"setKernelTimezone", "(II)I", (void*)android_server_AlarmManagerService_setKernelTimezone},
 };
 
 int register_android_server_AlarmManagerService(JNIEnv* env)

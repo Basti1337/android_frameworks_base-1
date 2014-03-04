@@ -101,5 +101,4 @@ public class QuietHoursTile extends QuickSettingsTile {
     public void onChangeUri(ContentResolver resolver, Uri uri) {
         updateResources();
     }
-
 }

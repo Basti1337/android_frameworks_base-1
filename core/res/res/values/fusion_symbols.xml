@@ -1,61 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+/* Copyright 2014, The Fusion Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License");
+** you may not use this file except in compliance with the License.
+** You may obtain a copy of the License at
+**
+**     http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing, software
+** distributed under the License is distributed on an "AS IS" BASIS,
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+** See the License for the specific language governing permissions and
+** limitations under the License.
+*/
+-->
 
 <resources>
 
-  <!-- Screenshort Trash -->
-  <java-symbol type="string" name="trash" />
-  
-  <!--  Animations -->
-  <java-symbol type="string" name="animation_default"/>
-  <java-symbol type="string" name="animation_fade"/>
-  <java-symbol type="string" name="animation_slide_left"/>
-  <java-symbol type="string" name="animation_slide_right"/>
-  <java-symbol type="string" name="animation_slide_left_no_fade"/>
-  <java-symbol type="string" name="animation_slide_right_no_fade"/>
-  <java-symbol type="string" name="animation_slide_up"/>
-  <java-symbol type="string" name="animation_slide_down"/>
-  <java-symbol type="string" name="animation_translucent"/>
-  <java-symbol type="string" name="animation_grow_shrink"/>
-  <java-symbol type="string" name="animation_grow_shrink_center"/>
-  <java-symbol type="string" name="animation_grow_shrink_bottom"/>
-  <java-symbol type="string" name="animation_grow_shrink_left"/>
-  <java-symbol type="string" name="animation_grow_shrink_right"/>
-  <java-symbol type="string" name="animation_random"/>
-  <java-symbol type="anim" name="animcontrol_shrink_fade_out_ribbon" />
-  <java-symbol type="anim" name="animcontrol_shrink_fade_out_center_ribbon" />
-  <java-symbol type="anim" name="animcontrol_shrink_fade_out_right_ribbon" />
-  <java-symbol type="anim" name="animcontrol_shrink_fade_out_left_ribbon" />
-  <java-symbol type="anim" name="animcontrol_shrink_fade_out_from_bottom_ribbon" />
-  <java-symbol type="anim" name="animcontrol_grow_fade_in_ribbon" />
-  <java-symbol type="anim" name="animcontrol_grow_fade_in_center_ribbon" />
-  <java-symbol type="anim" name="animcontrol_grow_fade_in_left_ribbon" />
-  <java-symbol type="anim" name="animcontrol_grow_fade_in_right_ribbon" />
-  <java-symbol type="anim" name="animcontrol_grow_fade_in_from_bottom_ribbon" />
-  <java-symbol type="anim" name="animcontrol_translucent_enter_ribbon" />
-  <java-symbol type="anim" name="animcontrol_translucent_exit_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_in_down" />
-  <java-symbol type="anim" name="animcontrol_slide_out_up" />
-  <java-symbol type="anim" name="animcontrol_slide_in_right_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_out_right_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_in_left_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_out_left_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slow_fade_in" />
-  <java-symbol type="anim" name="animcontrol_slow_fade_out" />
-  <java-symbol type="anim" name="animcontrol_slide_in_up_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_out_down_ribbon" />
-  <java-symbol type="anim" name="animcontrol_slide_out_right_no_fade" />
-  <java-symbol type="anim" name="animcontrol_slide_out_left_no_fade" />
-  <java-symbol type="anim" name="animcontrol_slide_in_right_no_fade" />
-  <java-symbol type="anim" name="animcontrol_slide_in_left_no_fade" />
-  <java-symbol type="array" name="anim_controls_entries" />
+  <!-- Package Manager -->
+  <java-symbol type="array" name="config_disabledComponents" />
 
-  <!-- Quick settings -->
-  <java-symbol type="string" name="hour" />
-  <java-symbol type="string" name="hours" />
-  <java-symbol type="string" name="minute" />
-  <java-symbol type="string" name="minutes" />
-  <java-symbol type="string" name="second" />
-  <java-symbol type="string" name="seconds" />
+  <!-- Notification and Battery light -->
+  <java-symbol type="array" name="notification_light_package_mapping" />
+  <java-symbol type="bool" name="config_multiColorBatteryLed" />
+  <java-symbol type="bool" name="config_intrusiveBatteryLed" />
+  <java-symbol type="bool" name="config_multiColorNotificationLed" />
+  <java-symbol type="array" name="config_notificationNoAlertsVibePattern" />
+
+  <!-- Privacy Guard -->
+  <java-symbol type="string" name="privacy_guard_notification" />
+  <java-symbol type="string" name="privacy_guard_notification_detail" />
+  <java-symbol type="string" name="privacy_guard_custom_notification_detail" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard_off" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard_custom" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard_plus" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard_off_plus" />
+  <java-symbol type="drawable" name="stat_notify_privacy_guard_custom_plus" />
+
+  <!-- Boot message dialog -->
+  <java-symbol type="drawable" name="busy_dlg_animation" />
+  <java-symbol type="drawable" name="busy_dlg_animation_0" />
+  <java-symbol type="drawable" name="busy_dlg_animation_1" />
+  <java-symbol type="drawable" name="busy_dlg_animation_2" />
+  <java-symbol type="drawable" name="busy_dlg_animation_3" />
+  <java-symbol type="drawable" name="busy_dlg_animation_4" />
+  <java-symbol type="drawable" name="busy_dlg_animation_5" />
+  <java-symbol type="drawable" name="busy_dlg_animation_6" />
+  <java-symbol type="drawable" name="busy_dlg_animation_7" />
+  <java-symbol type="drawable" name="busy_dlg_animation_8" />
+  <java-symbol type="drawable" name="busy_dlg_animation_9" />
+  <java-symbol type="drawable" name="busy_dlg_icon" />
+  <java-symbol type="id" name="busy_dlg_animation" />
+  <java-symbol type="id" name="busy_dlg_title" />
+  <java-symbol type="layout" name="busy_dlg" />
+
+  <!-- Config Power Menu -->
+  <java-symbol type="drawable" name="ic_lock_reboot" />
+  <java-symbol type="drawable" name="ic_lock_screenshot" />
+  <java-symbol type="string" name="global_action_reboot" />
+  <java-symbol type="string" name="global_actions" />
+  <java-symbol type="string" name="global_action_screenshot" />
+
+  <java-symbol type="array" name="shutdown_reboot_actions" />
+  <java-symbol type="array" name="shutdown_reboot_options" />
+
+  <java-symbol type="string" name="reboot_progress" />
+  <java-symbol type="string" name="reboot_system" />
+
+  <!-- Hardware keys -->
+  <java-symbol type="integer" name="config_deviceHardwareKeys" />
+
+  <!-- Telephony -->
+  <java-symbol type="bool" name="config_samsung_stk" />
+  <java-symbol type="bool" name="config_smsSamsungCdmaAlternateMessageIDEncoding" />
+  <java-symbol type="array" name="config_telephony_set_audioparameters" />
+
+  <!-- Config IME switcher -->
+  <java-symbol type="bool" name="config_show_IMESwitcher" />
+
+  <!-- WiFi -->
+  <java-symbol type="bool" name="config_wifiApFirmwareReload" />
+  <java-symbol type="bool" name="config_wifiApStartInterface" />
+
+  <!-- In WiFi AP notification -->
+  <java-symbol type="string" name="notify_turn_wifi_ap_off_title" />
 
   <!-- Power menu -->
   <java-symbol type="color" name="power_menu_icon_default_color" />
@@ -63,22 +93,6 @@
   <java-symbol type="id" name="icon1" />
   <java-symbol type="id" name="icon2" />
   <java-symbol type="id" name="icon3" />
-
-  <!-- Active display -->
-  <java-symbol type="dimen" name="system_bar_height" />
-  <java-symbol type="dimen" name="kg_widget_pager_horizontal_padding" />
-  <java-symbol type="dimen" name="kg_widget_pager_top_padding" />
-  <java-symbol type="dimen" name="kg_widget_pager_bottom_padding" />
-  <java-symbol type="dimen" name="keyguard_avatar_size" />
-  <java-symbol type="dimen" name="keyguard_avatar_frame_stroke_width" />
-  <java-symbol type="dimen" name="keyguard_avatar_frame_shadow_radius" />
-  <java-symbol type="dimen" name="kg_edge_swipe_region_size" />
-  <java-symbol type="dimen" name="kg_squashed_layout_threshold" />
-  <java-symbol type="dimen" name="kg_small_widget_height" />
-  <java-symbol type="dimen" name="lockscreen_target_inset" />
-  <java-symbol type="dimen" name="glowpad_notification_font_size" />
-  <java-symbol type="dimen" name="glowpad_notification_text_radius" />
-  <java-symbol type="dimen" name="glowpad_overflow_notifications_margin_top" />
 
   <!-- Expanded desktop -->
   <java-symbol type="string" name="global_actions_expanded_desktop_mode_on_status" />
@@ -102,18 +116,100 @@
   <!-- Description of accessibility unlock target -->
   <java-symbol type="string" name="description_target_unlock" />
 
-  <!-- Halo -->
-  <java-symbol type="style" name="Theme.DeviceDefault.FloatingWindow" />
-  <java-symbol type="style" name="Theme.DeviceDefault.FloatingWindowLight" />
+  <!-- Quick settings -->
+  <java-symbol type="string" name="hour" />
+  <java-symbol type="string" name="hours" />
+  <java-symbol type="string" name="minute" />
+  <java-symbol type="string" name="minutes" />
+  <java-symbol type="string" name="second" />
+  <java-symbol type="string" name="seconds" />
+
+  <!-- Stylus gestures -->
+  <java-symbol type="bool" name="config_stylusGestures" />
+  <java-symbol type="string" name="stylus_app_not_installed" />
+
+  <!-- Active display -->
+  <java-symbol type="dimen" name="system_bar_height" />
+  <java-symbol type="dimen" name="kg_widget_pager_horizontal_padding" />
+  <java-symbol type="dimen" name="kg_widget_pager_top_padding" />
+  <java-symbol type="dimen" name="kg_widget_pager_bottom_padding" />
+  <java-symbol type="dimen" name="keyguard_avatar_size" />
+  <java-symbol type="dimen" name="keyguard_avatar_frame_stroke_width" />
+  <java-symbol type="dimen" name="keyguard_avatar_frame_shadow_radius" />
+  <java-symbol type="dimen" name="kg_edge_swipe_region_size" />
+  <java-symbol type="dimen" name="kg_squashed_layout_threshold" />
+  <java-symbol type="dimen" name="kg_small_widget_height" />
+  <java-symbol type="dimen" name="lockscreen_target_inset" />
+  <java-symbol type="dimen" name="glowpad_notification_font_size" />
+  <java-symbol type="dimen" name="glowpad_notification_text_radius" />
+  <java-symbol type="dimen" name="glowpad_overflow_notifications_margin_top" />
 
   <!-- UI theme mode -->
   <java-symbol type="integer" name="config_uiThemeMode" />
   <java-symbol type="string" name="theme_auto_switch_mode_error" />
 
-  <!-- Hardware key rebinding -->
-  <java-symbol type="integer" name="config_deviceHardwareKeys" />
+  <!-- Fusion platlogo -->
+  <java-symbol type="drawable" name="fusion_platlogo" />
 
-  <!-- Progress Bar -->
+  <!-- Device has a h/w rotation lock switch -->
+  <java-symbol type="bool" name="config_hasRotationLockSwitch" />
+
+  <!-- Panel auto brightness -->
+  <java-symbol type="integer" name="config_panelAutoBrightnessValue" />
+
+  <!-- LED flashlight -->
+  <java-symbol type="bool" name="config_enableTorch" />
+
+  <!-- Legacy USB manager -->
+  <java-symbol type="string" name="config_legacyUmsLunFile" />
+
+  <!-- Force permanent menu key -->
+  <java-symbol type="bool" name="config_force_permanent_menu_key" />
+
+  <!--  Custom animations -->
+  <java-symbol type="string" name="action_null"/>
+  <java-symbol type="string" name="animation_fade"/>
+  <java-symbol type="string" name="animation_slide_left"/>
+  <java-symbol type="string" name="animation_slide_right"/>
+  <java-symbol type="string" name="animation_slide_left_no_fade"/>
+  <java-symbol type="string" name="animation_slide_right_no_fade"/>
+  <java-symbol type="string" name="animation_slide_up"/>
+  <java-symbol type="string" name="animation_slide_down"/>
+  <java-symbol type="string" name="animation_default"/>
+  <java-symbol type="string" name="animation_translucent"/>
+  <java-symbol type="string" name="animation_grow_shrink"/>
+  <java-symbol type="string" name="animation_grow_shrink_center"/>
+  <java-symbol type="string" name="animation_grow_shrink_bottom"/>
+  <java-symbol type="string" name="animation_grow_shrink_left"/>
+  <java-symbol type="string" name="animation_grow_shrink_right"/>
+  <java-symbol type="anim" name="shrink_fade_out_ribbon" />
+  <java-symbol type="anim" name="shrink_fade_out_center_ribbon" />
+  <java-symbol type="anim" name="shrink_fade_out_right_ribbon" />
+  <java-symbol type="anim" name="shrink_fade_out_left_ribbon" />
+  <java-symbol type="anim" name="shrink_fade_out_from_bottom_ribbon" />
+  <java-symbol type="anim" name="grow_fade_in_ribbon" />
+  <java-symbol type="anim" name="grow_fade_in_center_ribbon" />
+  <java-symbol type="anim" name="grow_fade_in_left_ribbon" />
+  <java-symbol type="anim" name="grow_fade_in_right_ribbon" />
+  <java-symbol type="anim" name="grow_fade_in_from_bottom_ribbon" />
+  <java-symbol type="anim" name="translucent_enter_ribbon" />
+  <java-symbol type="anim" name="translucent_exit_ribbon" />
+  <java-symbol type="anim" name="slide_in_down" />
+  <java-symbol type="anim" name="slide_out_up" />
+  <java-symbol type="anim" name="slide_in_right_ribbon" />
+  <java-symbol type="anim" name="slide_out_right_ribbon" />
+  <java-symbol type="anim" name="slide_in_left_ribbon" />
+  <java-symbol type="anim" name="slide_out_left_ribbon" />
+  <java-symbol type="anim" name="slow_fade_in" />
+  <java-symbol type="anim" name="slow_fade_out" />
+  <java-symbol type="anim" name="slide_in_up_ribbon" />
+  <java-symbol type="anim" name="slide_out_down_ribbon" />
+  <java-symbol type="anim" name="slide_in_right_no_fade" />
+  <java-symbol type="anim" name="slide_out_left_no_fade" />
+  <java-symbol type="anim" name="slide_in_left_no_fade" />
+  <java-symbol type="anim" name="slide_out_right_no_fade" />
+
+  <!-- Progress bar -->
   <java-symbol type="dimen" name="spb_default_stroke_width" />
   <java-symbol type="dimen" name="spb_default_stroke_separator_length" />
   <java-symbol type="bool" name="spb_default_reversed" />
@@ -135,12 +231,33 @@
   <java-symbol type="color" name="holo_purple_dark" />
   <java-symbol type="color" name="holo_red_dark" />
 
-  <!-- fast charge -->
-  <java-symbol type="string" name="config_fastChargePath" />
+  <!-- Toast Animation -->
+  <java-symbol type="style" name="Animation.Toast.Fade" />
+  <java-symbol type="style" name="Animation.Toast.SlideRight" />
+  <java-symbol type="style" name="Animation.Toast.SlideLeft" />
+  <java-symbol type="style" name="Animation.Toast.Xylon" />
+  <java-symbol type="style" name="Animation.Toast.Toko" />
+  <java-symbol type="style" name="Animation.Toast.Tn" />
+  <java-symbol type="style" name="Animation.Toast.Honami" />
+  <java-symbol type="style" name="Animation.Toast.FastFade" />
+  <java-symbol type="style" name="Animation.Toast.GrowFade" />
+  <java-symbol type="style" name="Animation.Toast.GrowFadeCenter" />
+  <java-symbol type="style" name="Animation.Toast.GrowFadeBottom" />
+  <java-symbol type="style" name="Animation.Toast.Translucent" />
 
   <!-- EdgeGesture service -->
   <java-symbol type="dimen" name="edge_gesture_trigger_distance" />
   <java-symbol type="dimen" name="edge_gesture_perpendicular_distance" />
   <java-symbol type="dimen" name="edge_gesture_trigger_thickness" />
+
+  <!-- Motion accelerometer -->
+  <java-symbol type="bool" name="use_motion_accel" />
+ 
+  <!-- Slim recent app screen-->
+  <java-symbol type="integer" name="config_recentDefaultDur" />
+  <java-symbol type="integer" name="config_recentExitDur" />
+  <java-symbol type="style" name="Animation.RecentScreen" />
+  <java-symbol type="anim" name="recent_screen_enter" />
+  <java-symbol type="anim" name="recent_screen_fade_out" />
 
 </resources>

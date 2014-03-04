@@ -30,15 +30,13 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.RectF;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Path;
 import android.graphics.RectF;
-import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.os.UserHandle;
 import android.os.Vibrator;
@@ -117,7 +115,7 @@ public class GlowPadView extends View {
         public void onGrabbed(View v, int handle);
         public void onReleased(View v, int handle);
         public void onTrigger(View v, int target);
-        //public void onTargetChange(View v, int target);
+        public void onTargetChange(View v, int target);
         public void onGrabbedStateChange(View v, int handle);
         public void onFinishFinalAnimation();
     }
@@ -544,9 +542,9 @@ public class GlowPadView extends View {
             target.setState(TargetDrawable.STATE_INACTIVE);
         }
         mActiveTarget = -1;
-        //if (mOnTriggerListener != null) {
-        //    mOnTriggerListener.onTargetChange(this, mActiveTarget);
-        //}
+        if (mOnTriggerListener != null) {
+            mOnTriggerListener.onTargetChange(this, mActiveTarget);
+        }
     }
 
     /**
@@ -767,18 +765,6 @@ public class GlowPadView extends View {
         }
     }
 
-    public int getTargetResourceId() {
-        return mTargetResourceId;
-    }
-
-    public ArrayList<TargetDrawable> getTargetDrawables() {
-        return mTargetDrawables;
-    }    
-    
-    public void setMagneticTargets(boolean enabled) {
-        mMagneticTargets = enabled;
-    }
-
     public void setTargetResources(ArrayList<TargetDrawable> drawList) {
         if (mAnimatingTargets) {
             // postpone this change until we return to the initial state
@@ -786,6 +772,18 @@ public class GlowPadView extends View {
         } else {
             internalSetTargetResources(drawList);
         }
+    }
+
+    public int getTargetResourceId() {
+        return mTargetResourceId;
+    }
+
+    public ArrayList<TargetDrawable> getTargetDrawables() {
+        return mTargetDrawables;
+    }
+
+    public void setMagneticTargets(boolean enabled) {
+        mMagneticTargets = enabled;
     }
 
     /**
@@ -1121,9 +1119,9 @@ public class GlowPadView extends View {
             }
         }
         mActiveTarget = activeTarget;
-        //if (mOnTriggerListener !=null) {
-        //    mOnTriggerListener.onTargetChange(this, mActiveTarget);
-        //}
+        if (mOnTriggerListener !=null) {
+            mOnTriggerListener.onTargetChange(this, mActiveTarget);
+        }
     }
 
     @Override
@@ -1398,7 +1396,6 @@ public class GlowPadView extends View {
 
             canvas.drawArc(mArcRect, -90, mArcAngle, false, mArcPaint);
         }
-
         if (!TextUtils.isEmpty(mHandleText) && mPaintText.getAlpha() != 0) {
             float x = mHandleDrawable.getPositionX();
             float y = mHandleDrawable.getPositionY();
@@ -1468,7 +1465,7 @@ public class GlowPadView extends View {
 
     private String getTargetDescription(int index) {
         if (mTargetDescriptions == null || mTargetDescriptions.isEmpty()
-            || index >= mTargetDescriptions.size()) {
+                || index >= mTargetDescriptions.size()) {
             mTargetDescriptions = loadDescriptions(mTargetDescriptionsResourceId);
             if (mTargetDrawables.size() != mTargetDescriptions.size()) {
                 if (DEBUG) Log.v(TAG, "The number of target drawables must be"
@@ -1481,7 +1478,7 @@ public class GlowPadView extends View {
 
     private String getDirectionDescription(int index) {
         if (mDirectionDescriptions == null || mDirectionDescriptions.isEmpty()
-            || index >= mDirectionDescriptions.size()) {
+                || index >= mDirectionDescriptions.size()) {
             mDirectionDescriptions = loadDescriptions(mDirectionDescriptionsResourceId);
             if (mTargetDrawables.size() != mDirectionDescriptions.size()) {
                 if (DEBUG) Log.v(TAG, "The number of target drawables must be"

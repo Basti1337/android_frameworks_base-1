@@ -76,8 +76,10 @@ public class Clock extends TextView implements DemoMode {
     public static final int STYLE_CLOCK_CENTER  = 1;
 
     public static final int FONT_BOLD = 0;
-    public static final int FONT_LIGHT = 1;
-    public static final int FONT_NORMAL = 2;
+    public static final int FONT_CONDENSED = 1;
+    public static final int FONT_LIGHT = 2;
+    public static final int FONT_LIGHT_ITALIC = 3;
+    public static final int FONT_NORMAL = 4;
 
     protected int mClockDateDisplay = CLOCK_DATE_DISPLAY_GONE;
     protected int mClockDateStyle = CLOCK_DATE_STYLE_UPPERCASE;
@@ -88,9 +90,6 @@ public class Clock extends TextView implements DemoMode {
     private int mAmPmStyle;
 
     private SettingsObserver mSettingsObserver;
-
-    private boolean mCustomColor;
-    private int systemColor;
 
     protected class SettingsObserver extends ContentObserver {
         SettingsObserver(Handler handler) {
@@ -106,13 +105,13 @@ public class Clock extends TextView implements DemoMode {
                     .getUriFor(Settings.System.STATUSBAR_CLOCK_AM_PM_STYLE),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System
-                    .getUriFor(Settings.System.STATUSBAR_CLOCK_STYLE), 
+                    .getUriFor(Settings.System.STATUSBAR_CLOCK_STYLE),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System
                     .getUriFor(Settings.System.STATUSBAR_CLOCK_FONT_STYLE),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System
-                    .getUriFor(Settings.System.STATUSBAR_CLOCK_COLOR), 
+                    .getUriFor(Settings.System.STATUSBAR_CLOCK_COLOR),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System
                     .getUriFor(Settings.System.STATUSBAR_CLOCK_DATE_DISPLAY),
@@ -122,12 +121,6 @@ public class Clock extends TextView implements DemoMode {
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System
                     .getUriFor(Settings.System.STATUSBAR_CLOCK_DATE_FORMAT),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.CUSTOM_SYSTEM_ICON_COLOR),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.SYSTEM_ICON_COLOR),
                     false, this, UserHandle.USER_ALL);
             updateSettings();
         }
@@ -354,16 +347,10 @@ public class Clock extends TextView implements DemoMode {
         mClockFontStyle = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUSBAR_CLOCK_FONT_STYLE, FONT_NORMAL,
                 UserHandle.USER_CURRENT);
-        mCustomColor = Settings.System.getIntForUser(resolver,
-                Settings.System.CUSTOM_SYSTEM_ICON_COLOR, 0,
-                UserHandle.USER_CURRENT) == 1;
 
         int defaultColor = getResources().getColor(R.color.status_bar_clock_color);
         int clockColor = Settings.System.getIntForUser(resolver,
                 Settings.System.STATUSBAR_CLOCK_COLOR, defaultColor,
-                UserHandle.USER_CURRENT);
-        int systemColor = Settings.System.getIntForUser(resolver,
-                Settings.System.SYSTEM_ICON_COLOR, defaultColor,
                 UserHandle.USER_CURRENT);
         if (clockColor == Integer.MIN_VALUE) {
             // flag to reset the color
@@ -371,11 +358,7 @@ public class Clock extends TextView implements DemoMode {
         }
 
         if (mAttached) {
-            if (mCustomColor) {
-                setTextColor(systemColor);
-            } else {
-                setTextColor(clockColor);
-            }
+            setTextColor(clockColor);
             getFontStyle(mClockFontStyle);
             updateClockVisibility();
             updateClock();
@@ -387,8 +370,14 @@ public class Clock extends TextView implements DemoMode {
             case FONT_BOLD:
                 setTypeface(Typeface.create("sans-serif", Typeface.BOLD));
                 break;
+            case FONT_CONDENSED:
+                setTypeface(Typeface.create("sans-serif-condensed", Typeface.NORMAL));
+                break;
             case FONT_LIGHT:
                 setTypeface(Typeface.create("sans-serif-light", Typeface.NORMAL));
+                break;
+            case FONT_LIGHT_ITALIC:
+                setTypeface(Typeface.create("sans-serif-light", Typeface.ITALIC));
                 break;
             case FONT_NORMAL:
             default:
@@ -428,4 +417,3 @@ public class Clock extends TextView implements DemoMode {
         }
     }
 }
-

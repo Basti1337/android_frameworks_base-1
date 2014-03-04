@@ -83,7 +83,11 @@
             android:layout_height="match_parent"
             android:orientation="horizontal">
 
-	    <include layout="@layout/network_stats" /> 
+            <include layout="@layout/network_stats"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                />
 
             <LinearLayout android:id="@+id/statusIcons"
                 android:layout_width="wrap_content"
@@ -114,7 +118,6 @@
                     android:id="@+id/battery"
                     android:layout_height="16dp"
                     android:layout_width="10.5dp"
-                    android:layout_marginBottom="0.33dp"
                     android:layout_marginStart="4dip"
                     systemui:batteryView="statusbar"
                     />
@@ -202,8 +205,4 @@
                 />
         </com.android.systemui.statusbar.phone.TickerView>
     </LinearLayout>
-    <com.android.systemui.statusbar.policy.BatteryBarController
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        systemui:viewLocation="1" />
 </com.android.systemui.statusbar.phone.PhoneStatusBarView>

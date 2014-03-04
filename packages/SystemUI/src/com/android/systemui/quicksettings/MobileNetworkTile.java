@@ -183,5 +183,4 @@ public class MobileNetworkTile extends NetworkTile {
         }
         return string;
     }
-
 }

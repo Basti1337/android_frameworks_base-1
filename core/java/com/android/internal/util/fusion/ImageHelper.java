@@ -143,5 +143,4 @@ public class ImageHelper {
 
         return output;
     }
-
 }

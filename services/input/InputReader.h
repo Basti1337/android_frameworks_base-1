@@ -230,6 +230,7 @@ struct InputReaderConfiguration {
     // True to show the location of touches on the touch screen as spots.
     bool showTouches;
 
+
     // True to show the pointer icon when a stylus is used.
     bool stylusIconEnabled;
 
@@ -239,6 +240,7 @@ struct InputReaderConfiguration {
 
     // Ignore finger touches this long after the stylus has been used (including hover)
     nsecs_t stylusPalmRejectionTime;
+
 
     InputReaderConfiguration() :
             virtualKeyQuietTime(0),
@@ -261,6 +263,7 @@ struct InputReaderConfiguration {
             stylusPalmRejectionTime(50 * 10000000LL), // 50 ms
             volumeKeysRotationMode(0)
     { }
+
 
     bool getDisplayInfo(bool external, DisplayViewport* outViewport) const;
     void setDisplayInfo(bool external, const DisplayViewport& viewport);
@@ -1221,7 +1224,6 @@ protected:
             DEVICE_TYPE_TOUCH_SCREEN,
             DEVICE_TYPE_TOUCH_PAD,
             DEVICE_TYPE_TOUCH_NAVIGATION,
-            DEVICE_TYPE_GESTURE_SENSOR,
             DEVICE_TYPE_POINTER,
         };
 

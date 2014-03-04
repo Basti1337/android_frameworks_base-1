@@ -17,12 +17,10 @@
 package com.android.systemui.statusbar.policy;
 
 import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
-import android.database.ContentObserver;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.wifi.WifiConfiguration;
@@ -156,8 +154,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
     ArrayList<SignalCluster> mSignalClusters = new ArrayList<SignalCluster>();
     ArrayList<NetworkSignalChangedCallback> mSignalsChangedCallbacks =
             new ArrayList<NetworkSignalChangedCallback>();
-    ArrayList<SignalStrengthChangedCallback> mSignalStrengthChangedCallbacks =
-            new ArrayList<SignalStrengthChangedCallback>();
     int mLastPhoneSignalIconId = -1;
     int mLastDataDirectionIconId = -1;
     int mLastDataDirectionOverlayIconId = -1;
@@ -170,9 +166,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
     private boolean mHasMobileDataFeature;
 
     boolean mDataAndWifiStacked = false;
-
-    // Whether the direction arrows are enabled by the user
-    boolean mDirectionArrowsEnabled = false;
 
     private UpdateUIListener mUpdateUIListener = null;
 
@@ -195,44 +188,12 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         void onAirplaneModeChanged(boolean enabled);
     }
 
-    private final class SettingsObserver extends ContentObserver {
-        SettingsObserver(Handler handler) {
-            super(handler);
-        }
-
-        void observe() {
-            ContentResolver resolver = mContext.getContentResolver();
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.STATUS_BAR_NETWORK_ACTIVITY),
-                    false, this, UserHandle.USER_ALL);
-            mDirectionArrowsEnabled = Settings.System.getIntForUser(resolver,
-                    Settings.System.STATUS_BAR_NETWORK_ACTIVITY,
-                    0, UserHandle.USER_CURRENT) == 0 ? false : true;
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            mDirectionArrowsEnabled = Settings.System.getIntForUser(mContext.getContentResolver(),
-                    Settings.System.STATUS_BAR_NETWORK_ACTIVITY,
-                    0, UserHandle.USER_CURRENT) == 0 ? false : true;
-            refreshViews();
-        }
-    }
-
-    public interface SignalStrengthChangedCallback {
-        void onPhoneSignalStrengthChanged(int dbm);
-    }
-
     /**
      * Construct this controller object and register for updates.
      */
     public NetworkController(Context context) {
         mContext = context;
         final Resources res = context.getResources();
-
-        // Register settings observer and set initial preferences
-        SettingsObserver settingsObserver = new SettingsObserver(new Handler());
-        settingsObserver.observe();
 
         ConnectivityManager cm = (ConnectivityManager)mContext.getSystemService(
                 Context.CONNECTIVITY_SERVICE);
@@ -363,19 +324,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         notifySignalsChangedCallbacks(cb);
     }
 
-    public void removeNetworkSignalChangedCallback(NetworkSignalChangedCallback cb) {
-        mSignalsChangedCallbacks.remove(cb);
-    }
-
-    public void addSignalStrengthChangedCallback(SignalStrengthChangedCallback cb) {
-        mSignalStrengthChangedCallbacks.add(cb);
-        notifySignalStrengthChangedCallbacks(cb);
-    }
-
-    public void removeSignalStrengthChangedCallback(SignalStrengthChangedCallback cb) {
-        mSignalStrengthChangedCallbacks.remove(cb);
-    }
-
     public void refreshSignalCluster(SignalCluster cluster) {
         if (mDemoMode) return;
         cluster.setWifiIndicators(
@@ -405,6 +353,10 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                     mContentDescriptionDataType);
         }
         cluster.setIsAirplaneMode(mAirplaneMode, mAirplaneIconId);
+    }
+
+    public void removeNetworkSignalChangedCallback(NetworkSignalChangedCallback cb) {
+        mSignalsChangedCallbacks.remove(cb);
     }
 
     void notifySignalsChangedCallbacks(NetworkSignalChangedCallback cb) {
@@ -443,11 +395,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
             }
         }
         cb.onAirplaneModeChanged(mAirplaneMode);
-    }
-
-    private void notifySignalStrengthChangedCallbacks(SignalStrengthChangedCallback cb) {
-        int dbm = mSignalStrength != null ? mSignalStrength.getDbm() : 0;
-        cb.onPhoneSignalStrengthChanged(dbm);
     }
 
     public void setStackedMode(boolean stacked) {
@@ -1101,8 +1048,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         String mobileLabel = "";
         int N;
         final boolean emergencyOnly = isEmergencyOnly();
-        final String customLabel = Settings.System.getString(mContext.getContentResolver(),
-                Settings.System.CUSTOM_CARRIER_LABEL);
 
         if (!mHasMobileDataFeature) {
             mDataSignalIconId = mPhoneSignalIconId = 0;
@@ -1135,23 +1080,19 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
             // Now for things that should only be shown when actually using mobile data.
             if (mDataConnected) {
                 combinedSignalIconId = mDataSignalIconId;
-                if (mDirectionArrowsEnabled) {
-                    switch (mDataActivity) {
-                        case TelephonyManager.DATA_ACTIVITY_IN:
-                            mMobileActivityIconId = R.drawable.stat_sys_signal_in;
-                            break;
-                        case TelephonyManager.DATA_ACTIVITY_OUT:
-                            mMobileActivityIconId = R.drawable.stat_sys_signal_out;
-                            break;
-                        case TelephonyManager.DATA_ACTIVITY_INOUT:
-                            mMobileActivityIconId = R.drawable.stat_sys_signal_inout;
-                            break;
-                        default:
-                            mMobileActivityIconId = 0;
-                            break;
-                    }
-                } else {
-                    mMobileActivityIconId = 0;
+                switch (mDataActivity) {
+                    case TelephonyManager.DATA_ACTIVITY_IN:
+                        mMobileActivityIconId = R.drawable.stat_sys_signal_in;
+                        break;
+                    case TelephonyManager.DATA_ACTIVITY_OUT:
+                        mMobileActivityIconId = R.drawable.stat_sys_signal_out;
+                        break;
+                    case TelephonyManager.DATA_ACTIVITY_INOUT:
+                        mMobileActivityIconId = R.drawable.stat_sys_signal_inout;
+                        break;
+                    default:
+                        mMobileActivityIconId = 0;
+                        break;
                 }
 
                 combinedLabel = mobileLabel;
@@ -1172,23 +1113,19 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                 if (DEBUG) {
                     wifiLabel += "xxxxXXXXxxxxXXXX";
                 }
-                if (mDirectionArrowsEnabled) {
-                    switch (mWifiActivity) {
-                        case WifiManager.DATA_ACTIVITY_IN:
-                            mWifiActivityIconId = R.drawable.stat_sys_wifi_in;
-                            break;
-                        case WifiManager.DATA_ACTIVITY_OUT:
-                            mWifiActivityIconId = R.drawable.stat_sys_wifi_out;
-                            break;
-                        case WifiManager.DATA_ACTIVITY_INOUT:
-                            mWifiActivityIconId = R.drawable.stat_sys_wifi_inout;
-                            break;
-                        case WifiManager.DATA_ACTIVITY_NONE:
-                            mWifiActivityIconId = 0;
-                            break;
-                    }
-                } else {
-                    mWifiActivityIconId = 0;
+                switch (mWifiActivity) {
+                    case WifiManager.DATA_ACTIVITY_IN:
+                        mWifiActivityIconId = R.drawable.stat_sys_wifi_in;
+                        break;
+                    case WifiManager.DATA_ACTIVITY_OUT:
+                        mWifiActivityIconId = R.drawable.stat_sys_wifi_out;
+                        break;
+                    case WifiManager.DATA_ACTIVITY_INOUT:
+                        mWifiActivityIconId = R.drawable.stat_sys_wifi_inout;
+                        break;
+                    case WifiManager.DATA_ACTIVITY_NONE:
+                        mWifiActivityIconId = 0;
+                        break;
                 }
             }
 
@@ -1266,14 +1203,19 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
             }
         }
 
-        if (customLabel != null && customLabel.length() > 0) {
-            combinedLabel = customLabel;
-            mobileLabel = customLabel;
-        }
-
         // Cleanup the double quotes
         if (wifiLabel.length() > 0) {
             wifiLabel = wifiLabel.replaceAll("^\"|\"$", "");
+        }
+
+        final String customLabel = Settings.System.getString(mContext.getContentResolver(),
+                Settings.System.NOTIFICATION_CUSTOM_CARRIER_LABEL);
+
+        if (customLabel != null && customLabel.length() > 0) {
+            if (combinedLabel.equals(mobileLabel)) {
+                combinedLabel = customLabel;
+            }
+            mobileLabel = customLabel;
         }
 
         if (DEBUG) {
@@ -1318,10 +1260,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
         // update QS
         for (NetworkSignalChangedCallback cb : mSignalsChangedCallbacks) {
             notifySignalsChangedCallbacks(cb);
-        }
-
-        for (SignalStrengthChangedCallback cb : mSignalStrengthChangedCallbacks) {
-            notifySignalStrengthChangedCallbacks(cb);
         }
 
         if (mLastPhoneSignalIconId          != mPhoneSignalIconId
@@ -1448,11 +1386,6 @@ public class NetworkController extends BroadcastReceiver implements DemoMode {
                     v.setContentDescription(mContentDescriptionDataType);
                 }
             }
-        }
-
-        // the data direction overlay
-        if (mLastDataDirectionOverlayIconId != combinedActivityIconId) {
-            mLastDataDirectionOverlayIconId = combinedActivityIconId;
         }
 
         // the combinedLabel in the notification panel

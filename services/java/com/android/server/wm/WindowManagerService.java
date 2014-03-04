@@ -550,7 +550,7 @@ public class WindowManagerService extends IWindowManager.Stub
     PowerManagerService mPowerManager;
 
     float mWindowAnimationScale = 1.0f;
-    float mTransitionAnimationScale = 1.0f;
+    float mTransitionAnimationScale = 0.5f;
     float mAnimatorDurationScale = 1.0f;
 
     final InputManagerService mInputManager;
@@ -827,10 +827,10 @@ public class WindowManagerService extends IWindowManager.Stub
             SurfaceControl.closeTransaction();
         }
 
-        ThemeUtils.registerThemeChangeReceiver(mContext, mThemeChangeReceiver);
-
         // Load hardware rotation from prop
         mSfHwRotation = android.os.SystemProperties.getInt("ro.sf.hwrotation",0) / 90;
+
+        ThemeUtils.registerThemeChangeReceiver(mContext, mThemeChangeReceiver);
     }
 
     private Context getUiContext() {
@@ -5255,7 +5255,7 @@ public class WindowManagerService extends IWindowManager.Stub
     // Called by window manager policy. Not exposed externally.
     @Override
     public void reboot() {
-        ShutdownThread.reboot(mContext, null, true);
+        ShutdownThread.reboot(getUiContext(), null, true);
     }
 
     public void setCurrentUser(final int newUserId) {
@@ -7978,6 +7978,8 @@ public class WindowManagerService extends IWindowManager.Stub
 
     final WindowState windowForClientLocked(Session session, IBinder client,
             boolean throwOnError) {
+        if (client == null)
+            return null; //this is intentional, so STFU
         WindowState win = mWindowMap.get(client);
         if (localLOGV) Slog.v(
             TAG, "Looking up client " + client + ": " + win);
@@ -9632,7 +9634,6 @@ public class WindowManagerService extends IWindowManager.Stub
     void scheduleAnimationLocked() {
         if (!mAnimationScheduled) {
             mAnimationScheduled = true;
-            mPolicy.windowAnimationStarted();
             mChoreographer.postCallback(
                     Choreographer.CALLBACK_ANIMATION, mAnimator.mAnimationRunnable, null);
         }
@@ -9940,36 +9941,30 @@ public class WindowManagerService extends IWindowManager.Stub
                 }
             }
 
-            if (DEBUG_FOCUS_LIGHT) Slog.v(TAG, "findFocusedWindow: Found new focus @ " + i + " = " + win);
+            if (DEBUG_FOCUS_LIGHT) Slog.v(TAG, "findFocusedWindow: Found new focus @ " + i +
+                        " = " + win);
 
-	    int mHaloEnabled = (Settings.System.getInt(mContext.getContentResolver(), Settings.System.HALO_ENABLED, 0));
-
-            if(mHaloEnabled != 1){
-		    // Dispatch to this window if it is wants key events.
-		    if (win.canReceiveKeys()) {
-		        if (mFocusedApp != null) {
-		            if (mIsTokenSplitted.containsKey(mFocusedApp.token) && mIsTokenSplitted.get(mFocusedApp.token)) {
-		                if ((mTaskTouched != null && mTaskTouched.equals(mFocusedApp.token)) || mTaskTouched == null) {
-		                    if (DEBUG_FOCUS) Slog.v(
-		                        TAG, "Found focus @ " + i + " = " + win);
-		                    return win;
-		                } else {
-		                    if (DEBUG_FOCUS || localLOGV) Slog.v(
-		                        TAG, "Task " + win + " is split, but not last touched");
-		                }
-		            } else {
-		                if (DEBUG_FOCUS) Slog.v(TAG, "Task " + win + " has no split token");
-		                return win;
-		            }
-		        } else {
-		            if (DEBUG_FOCUS) Slog.v(TAG, "Null thisApp");
-		            return win;
-		        }
-		    }	
-	    }else{
-		return win;
-	    }
-	    
+            // Dispatch to this window if it is wants key events.
+            if (win.canReceiveKeys()) {
+                if (mFocusedApp != null) {
+                    if (mIsTokenSplitted.containsKey(mFocusedApp.token) && mIsTokenSplitted.get(mFocusedApp.token)) {
+                        if ((mTaskTouched != null && mTaskTouched.equals(mFocusedApp.token)) || mTaskTouched == null) {
+                            if (DEBUG_FOCUS) Slog.v(
+                                TAG, "Found focus @ " + i + " = " + win);
+                            return win;
+                        } else {
+                            if (DEBUG_FOCUS || localLOGV) Slog.v(
+                                TAG, "Task " + win + " is split, but not last touched");
+                        }
+                    } else {
+                        if (DEBUG_FOCUS) Slog.v(TAG, "Task " + win + " has no split token");
+                        return win;
+                    }
+                } else {
+                    if (DEBUG_FOCUS) Slog.v(TAG, "Null thisApp");
+                    return win;
+                }
+            }
         }
 
         if (DEBUG_FOCUS_LIGHT) Slog.v(TAG, "findFocusedWindow: No focusable windows.");
@@ -10278,11 +10273,6 @@ public class WindowManagerService extends IWindowManager.Stub
     @Override
     public boolean hasNavigationBar() {
         return mPolicy.hasNavigationBar();
-    }
-
-    @Override
-    public boolean hasMenuKeyEnabled() {
-        return mPolicy.hasMenuKeyEnabled();
     }
 
     @Override
@@ -10986,7 +10976,6 @@ public class WindowManagerService extends IWindowManager.Stub
     }
 
     /* @hide */
-
     @Override
     public void toggleGlobalMenu() {
         mPolicy.toggleGlobalMenu();
@@ -11006,8 +10995,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
     /* @hide */
     @Override
-    public void updateStatusBarNavBarHeight() {
-        mPolicy.updateStatusBarNavBarHeight();
+    public void updateSettings() {
     }
 
     /** SPLIT VIEW **/

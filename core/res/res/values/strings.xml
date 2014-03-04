@@ -394,9 +394,6 @@
     <!-- status message in phone options dialog for when airplane mode is off -->
     <string name="global_actions_airplane_mode_off_status">Airplane mode is OFF</string>
 
-    <!-- label for screen record item in phone options dialog -->
-    <string name="global_action_screen_record">Screen record</string>
-
     <!-- Text to use when the number in a notification info is too large
          (greater than status_bar_notification_info_maxnum, defined in
          values/config.xml) and must be truncated. May need to be localized
@@ -593,10 +590,6 @@
         card numbers and passwords.</string>
 
     <!--  Permissions -->
-
-    <!-- Superuser application permission, allows applications to call the superuser binary (su) -->
-    <string name="permlab_accessSuperuser">full permissions to all device features and storage</string>
-    <string name="permdesc_accessSuperuser">Superuser grants full access to all device features and storage, including the secure and sensitive hardware elements of your device. This permission is potentially dangerous.</string>
 
     <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
     <string name="permlab_statusBar">disable or modify status bar</string>
@@ -2293,10 +2286,10 @@
                                           --> <skip />
 
     <!-- On the keyguard screen, it shows the carrier the phone is connected to.  This is displayed if the phone is not connected to a carrier.-->
-    <string name="lockscreen_carrier_default">No service.</string>
+    <string name="lockscreen_carrier_default">No service</string>
 
     <!-- Shown in the lock screen to tell the user that the screen is locked. -->
-    <string name="lockscreen_screen_locked">Screen locked.</string>
+    <string name="lockscreen_screen_locked">Screen locked</string>
 
     <!-- when pattern lock is enabled, tell them about the emergency dial -->
     <string name="lockscreen_instructions_when_pattern_enabled">Press Menu to unlock or place emergency call.</string>
@@ -3509,8 +3502,8 @@
     <string name="usb_mtp_notification_title">Connected as a media device</string>
     <!-- USB_PREFERENCES: Notification for when the user connects the phone to a computer via USB in PTP mode.  This is the title -->
     <string name="usb_ptp_notification_title">Connected as a camera</string>
-    <!-- USB_PREFERENCES: Notification for when the user connects the phone to a computer via USB in mass storage mode.  This is the title -->
-    <string name="usb_mass_storage_notification_title">Connected as a mass storage device</string>
+    <!-- USB_PREFERENCES: Notification for when the user connects the phone to a computer via USB in mass storage mode (for installer CD image).  This is the title -->
+    <string name="usb_cd_installer_notification_title">Connected as an installer</string>
     <!-- USB_PREFERENCES: Notification for when a USB accessory is attached.  This is the title -->
     <string name="usb_accessory_notification_title">Connected to a USB accessory</string>
     <!-- See USB_PREFERENCES. This is the message. -->
@@ -3523,16 +3516,16 @@
     <!-- See EXTMEDIA_FORMAT.  EXTMEDIA_FORMAT_DIALOG:  After the user selects the notification, a dialog is shown asking if he wants to format the SD card.  This is the title. -->
     <string name="extmedia_format_title" product="default">Format SD card?</string>
     <!-- See EXTMEDIA_FORMAT.   This is the message. [CHAR LIMIT=NONE] -->
-    <string name="extmedia_format_message" product="nosdcard">All files stored in your USB storage (under path \'%1$s\') will be erased. This action can\'t be reversed!</string>
+    <string name="extmedia_format_message" product="nosdcard">All files stored in your USB storage will be erased. This action can\'t be reversed!</string>
     <!-- See EXTMEDIA_FORMAT.   This is the message. -->
-    <string name="extmedia_format_message" product="default">All data on your card (under path \'%1$s\') will be erased. This action can\'t be reversed!</string>
+    <string name="extmedia_format_message" product="default">All data on your card will be lost.</string>
     <!-- See EXTMEDIA_FORMAT.    This is the button text to format the sd card. -->
     <string name="extmedia_format_button_format">Format</string>
 
     <!-- Title of notification shown when ADB is actively connected to the phone. -->
-    <string name="adb_active_notification_title">Android debugging enabled</string>
+    <string name="adb_active_notification_title">USB debugging connected</string>
     <!-- Message of notification shown when ADB is actively connected to the phone. -->
-    <string name="adb_active_notification_message">Touch to disable debugging.</string>
+    <string name="adb_active_notification_message">Touch to disable USB debugging.</string>
 
     <!-- Used to replace %s in urls retreived from the signin server with locales.  For Some        -->
     <!-- devices we don't support all the locales we ship to and need to replace the '%s' with a    -->
@@ -4529,15 +4522,5 @@
 
     <!-- Cling help message when hiding the navigation bar entering immersive mode [CHAR LIMIT=none] -->
     <string name="immersive_mode_confirmation" msgid="8554991488096662508">Swipe down from the top to exit full screen.</string>
-
-    <!-- Longer version of toast bar message when hiding the transient navigation bar (if room) -->
-    <string name="transient_navigation_confirmation_long">Swipe from edge of screen to reveal system bar</string>
-    <add-resource type="bool" name="config_hotswapCapable"></add-resource>
-
-    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
-    <string name="permlab_recordScreen">Record content being displayed</string>
-    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
-    <string name="permdesc_recordScreen">Allows the app to
-        record the users screen.</string>
 
 </resources>

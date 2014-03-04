@@ -25,13 +25,13 @@ import com.android.server.display.DisplayManagerService;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
-import android.content.ContentResolver;
 import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.database.ContentObserver;
 import android.content.res.Resources;
+import android.database.ContentObserver;
 import android.graphics.Bitmap;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -192,9 +192,6 @@ final class DisplayPowerController {
 
     // The display blanker.
     private final DisplayBlanker mDisplayBlanker;
-
-    // Our context
-    private final Context mContext;
 
     // Our handler.
     private final DisplayControllerHandler mHandler;
@@ -379,6 +376,8 @@ final class DisplayPowerController {
     // Twilight changed.  We might recalculate auto-brightness values.
     private boolean mTwilightChanged;
     private boolean mAutoBrightnessSettingsChanged;
+
+    private Context mContext;
 
     private KeyguardServiceWrapper mKeyguardService;
 
@@ -762,7 +761,7 @@ final class DisplayPowerController {
             mustNotify = !mDisplayReadyLocked;
         }
 
-	// update crt mode settings and force initialize if value changed
+        // update crt mode settings and force initialize if value changed
         if (mElectronBeamMode != mPowerRequest.electronBeamMode) {
             mElectronBeamMode = mPowerRequest.electronBeamMode;
             mustInitialize = true;
@@ -888,14 +887,12 @@ final class DisplayPowerController {
                             setScreenOn(false);
                             unblockScreenOn();
                         } else if (mPowerState.prepareElectronBeam(
-                                //mElectronBeamFadesConfig ?
-				mElectronBeamMode == 0 ?
+                                mElectronBeamMode == 0 ?
                                         ElectronBeam.MODE_FADE :
-                                        (mElectronBeamMode == 4
+                                            (mElectronBeamMode == 4
                                             ? ElectronBeam.MODE_SCALE_DOWN
                                             : ElectronBeam.MODE_COOL_DOWN))
-                                && mPowerState.isScreenOn()
-                                /*&& useScreenOffAnimation()*/) {
+                                && mPowerState.isScreenOn()) {
                             mElectronBeamOffAnimator.start();
                         } else {
                             mElectronBeamOffAnimator.end();
@@ -1593,9 +1590,4 @@ final class DisplayPowerController {
             updatePowerState();
         }
     };
-
-    //private boolean useScreenOffAnimation() {
-    //    return Settings.System.getInt(mContext.getContentResolver(),
-    //            Settings.System.SCREEN_OFF_ANIMATION, 1) == 1;
-    //}
 }

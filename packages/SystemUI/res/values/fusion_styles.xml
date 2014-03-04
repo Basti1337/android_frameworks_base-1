@@ -1,38 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2013 The Fusion Project
-
-     Licensed under the Apache License, Version 2.0 (the "License");
-     you may not use this file except in compliance with the License.
-     You may obtain a copy of the License at
-  
-          http://www.apache.org/licenses/LICENSE-2.0
-  
-     Unless required by applicable law or agreed to in writing, software
-     distributed under the License is distributed on an "AS IS" BASIS,
-     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-     See the License for the specific language governing permissions and
-     limitations under the License.
+<!--
+/* Copyright 2014, The Fusion Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License");
+** you may not use this file except in compliance with the License.
+** You may obtain a copy of the License at
+**
+**     http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing, software
+** distributed under the License is distributed on an "AS IS" BASIS,
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+** See the License for the specific language governing permissions and
+** limitations under the License.
+*/
 -->
 
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Network stats -->
-    <style name="TextAppearance.StatusBar.NetworkStats"
-           parent="@*android:style/TextAppearance.StatusBar">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-	<item name="android:layout_gravity">center_vertical</item>
-        <item name="android:textSize">@dimen/network_stats_text_size</item>
-        <item name="android:textColor">#ffffff</item>
-    </style>
-
-    <!-- Custom battery -->
-    <style name="TextAppearance.StatusBar.Battery" parent="@*android:style/TextAppearance.StatusBar.Icon">
+    <!-- Status bar signal style -->
+    <style name="TextAppearance.StatusBar.Signal" parent="@*android:style/TextAppearance.StatusBar.Icon">
         <!-- Note: must be dp to fit in status bar -->
         <item name="android:textSize">12dp</item>
         <item name="android:textStyle">normal</item>
-        <item name="android:textColor">@color/batterymeter_charge_color</item>
+        <item name="android:textColor">@color/status_bar_clock_color</item>
     </style>
 
     <!-- Active display -->
@@ -73,21 +64,13 @@
         <item name="android:lineSpacingMultiplier">1.1</item>
     </style>
 
-    <!-- App sidebar -->
-    <style name="AppSidebarItemText" >
-        <item name="android:textColor">@color/sidebar_item_text_color</item>
-        <item name="android:textSize">@dimen/item_title_text_size</item>
-        <item name="android:singleLine">true</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:gravity">center</item>
-        <item name="android:shadowColor">@color/sidebar_item_text_shadow_color</item>
-        <item name="android:shadowRadius">1.0</item>
-        <item name="android:shadowDx">2.0</item>
-        <item name="android:shadowDy">2.0</item>
+    <style name="TextAppearance.StatusBar.NetworkStats"
+        parent="@*android:style/TextAppearance.StatusBar">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textSize">@dimen/network_stats_text_size</item>
+        <item name="android:textColor">@android:color/white</item>
     </style>
 
-    <style name="TextAppearance.StatusBar.Time" parent="@*android:style/TextAppearance.StatusBar">
-        <item name="android:textSize">@dimen/notification_subtext_size</item>
-        <item name="android:textColor">#999999</item>
-    </style>
 </resources>

@@ -1,47 +1,76 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!--
+/* Copyright 2014, The Fusion Project
+**
+** Licensed under the Apache License, Version 2.0 (the "License");
+** you may not use this file except in compliance with the License.
+** You may obtain a copy of the License at
+**
+**     http://www.apache.org/licenses/LICENSE-2.0
+**
+** Unless required by applicable law or agreed to in writing, software
+** distributed under the License is distributed on an "AS IS" BASIS,
+** WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+** See the License for the specific language governing permissions and
+** limitations under the License.
+*/
+-->
 
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
-    <!--ScreenShot QuickTrash-->
-    <string name="trash">Trash</string>
+    <!-- Privacy Guard -->
+    <string name="permlab_changePrivacyGuardState">enable or disable privacy guard</string>
+    <string name="permdesc_changePrivacyGuardState">Allows the app to change whether another app runs with Privacy Guard. When an app is running with Privacy Guard, it will not have access to personal data such as contacts, call logs, or messages.</string>
+    <string name="privacy_guard_notification">Privacy Guard active</string>
+    <string name="privacy_guard_notification_detail"><xliff:g id="app">%1$s</xliff:g> will not be able to access personal data</string>
+    <string name="privacy_guard_custom_notification_detail"><xliff:g id="app">%1$s</xliff:g> will not be able to access custom permissions</string>
 
-    <!-- Animation Strings -->
-    <string name="animation_default">Default</string>
-    <string name="animation_fade">Fade</string>
-    <string name="animation_slide_right">Slide in right</string>
-    <string name="animation_slide_left">Slide in left</string>
-    <string name="animation_slide_right_no_fade">Slide in right (No fade)</string>
-    <string name="animation_slide_left_no_fade">Slide in left (No fade)</string>
-    <string name="animation_slide_up">Slide in bottom</string>
-    <string name="animation_slide_down">Slide in top</string>
-    <string name="animation_translucent">Translucent</string>
-    <string name="animation_grow_shrink">Grow in (Top)</string>
-    <string name="animation_grow_shrink_center">Grow in (Center)</string>
-    <string name="animation_grow_shrink_bottom">Grow in (Bottom)</string>
-    <string name="animation_grow_shrink_left">Grow in (Left)</string>
-    <string name="animation_grow_shrink_right">Grow in (Right)</string>
-    <string name="animation_random">Random</string>
+    <!-- Button to reboot the phone, within the Phone Options dialog -->
+    <string name="reboot_system" product="tablet">Reboot tablet</string>
+    <string name="reboot_system" product="default">Reboot phone</string>
+    <!-- Reboot Progress Dialog. This is shown if the user chooses to reboot the phone. -->
 
-    <!-- Description of accessibility direction for targets [CHAR LIMIT=NONE] -->
-    <string name="accessibility_target_direction">Swipe to activate a target</string>
+    <!-- label for item that screenshots in phone options dialog -->
+    <string name="global_action_screenshot">Screenshot</string>
 
-    <!-- Title of an application permission that lets an application view/edit revoked permissions. -->
-    <string name="permlab_revokePermissions">Allows view and edit of revoked permissions. Not for use by normal applications.</string>
-    <!-- Description of an application permission that lets lets an application view/edit revoked permissions. -->
-    <string name="permdesc_revokePermissions">Allows read and write for revoked permissions. Not for use by normal applications.</string>
+    <!-- Button to reboot the phone, within the Reboot Options dialog -->
+    <string name="reboot_reboot">Reboot</string>
+    <!-- Button to reboot the phone into recovery, within the Reboot Options dialog -->
+    <string name="reboot_recovery">Recovery</string>
+    <!-- Button to reboot the phone into bootloader, within the Reboot Options dialog -->
+    <string name="reboot_bootloader">Bootloader</string>
+    <!-- Button to reboot the phone into bootmenu, within the Reboot Options dialog -->
+    <string name="reboot_bootmenu">Bootmenu</string>
+    <!-- Button to reboot the phone into fastboot, within the Reboot Options dialog -->
+    <string name="reboot_fastboot">Fastboot</string>
+    <!-- Button to reboot the phone into download, within the Reboot Options dialog -->
+    <string name="reboot_download">Download</string>
 
-    <!-- Title of an application permission that lets an application access the ThemeManagerService. -->
-    <string name="permlab_accessThemeService">Allows accessing the theme manager service. Not for use by normal applications.</string>
-    <!-- Description of an application permission that lets lets an application access the ThemeManagerService -->
-    <string name="permdesc_accessThemeService">Allows an application to set/reset themes. Not for use by normal applications.</string>
+    <!-- Reboot Progress Dialog. This is shown if the user chooses to reboot the phone. -->
+    <string name="reboot_progress">Rebooting\u2026</string>
+    <!-- Reboot Confirmation Dialog.  When the user chooses to reboot the phone, there will be a confirmation dialog.  This is the message. -->
+    <string name="reboot_confirm">Your phone will reboot.</string>
 
-   <!-- Error description on theme switch with ligtsensor mode enabled -->
-   <string name="theme_auto_switch_mode_error">Automatic light condition change mode is enabled. Manual switching is not possible.</string>
+    <!-- label for item that reboots the phone in phone options dialog -->
+    <string name="global_action_reboot">Reboot</string>
+
+    <!-- label for item that opens the profile choosing dialog -->
+    <string name="global_action_choose_profile">Profile</string>
+
+    <!-- In WiFi AP notification -->
+    <string name="notify_turn_wifi_ap_off_title">Turn Wi-Fi AP off</string>
+
+    <!-- status message in phone options dialog for when expanded desktop is on -->
+    <string name="global_actions_expanded_desktop_mode_on_status">Expanded desktop is ON</string>
+
+    <!-- status message in phone options dialog for when expanded desktop is off -->
+    <string name="global_actions_expanded_desktop_mode_off_status">Expanded desktop is OFF</string>
+
     <!-- status message in phone options dialog for when pie is on -->
-    <string name="global_actions_pie_mode_on_status">SlimPie is ON</string>
+    <string name="global_actions_pie_mode_on_status">Pie control is ON</string>
 
     <!-- status message in phone options dialog for when pie is off -->
-    <string name="global_actions_pie_mode_off_status">SlimPie is OFF</string>
+    <string name="global_actions_pie_mode_off_status">Pie control is OFF</string>
 
     <!-- Error message if user want to try to disable all navigation options -->
     <string name="disable_pie_navigation_error">You cannot disable pie controls. No other navigation is enabled. Enable first the navigation bar to turn off pie controls.</string>
@@ -54,5 +83,52 @@
 
     <!-- Error message if user want to try to disable all navigation options -->
     <string name="disable_navigation_pie_error">You cannot disable the navigation bar. No other navigation is enabled. Enable first pie controls to turn off the navigation bar.</string>
+
+    <!-- Description of accessibility direction for targets [CHAR LIMIT=NONE] -->
+    <string name="accessibility_target_direction">Swipe to activate a target</string>
+
+    <!-- stylus gestures support -->
+    <string name="stylus_app_not_installed">%s is not installed</string>
+
+    <!--  Custom animations -->
+    <string name="animation_fade">Fade</string>
+    <string name="animation_slide_right">Slide in right</string>
+    <string name="animation_slide_left">Slide in left</string>
+    <string name="animation_slide_right_no_fade">Slide in right (No fade)</string>
+    <string name="animation_slide_left_no_fade">Slide in left (No fade)</string>
+    <string name="animation_slide_up">Slide in bottom</string>
+    <string name="animation_slide_down">Slide in top</string>
+    <string name="animation_default">Default</string>
+    <string name="animation_translucent">Translucent</string>
+    <string name="animation_grow_shrink">Grow in (Top)</string>
+    <string name="animation_grow_shrink_center">Grow in (Center)</string>
+    <string name="animation_grow_shrink_bottom">Grow in (Bottom)</string>
+    <string name="animation_grow_shrink_left">Grow in (Left)</string>
+    <string name="animation_grow_shrink_right">Grow in (Right)</string>
+    <string name="action_null">Blank</string>
+
+    <!-- Title of an application permission that lets an application view/edit revoked permissions. -->
+    <string name="permlab_revokePermissions">Allows view and edit of revoked permissions. Not for use by normal applications.</string>
+    <!-- Description of an application permission that lets lets an application view/edit revoked permissions. -->
+    <string name="permdesc_revokePermissions">Allows read and write for revoked permissions. Not for use by normal applications.</string>
+
+    <!-- Title of an application permission that lets an application access the ThemeManagerService. -->
+    <string name="permlab_accessThemeService">Allows accessing the theme manager service. Not for use by normal applications.</string>
+    <!-- Description of an application permission that lets lets an application access the ThemeManagerService -->
+    <string name="permdesc_accessThemeService">Allows an application to set/reset themes. Not for use by normal applications.</string>
+	
+	<!-- Error description on theme switch with ligtsensor mode enabled -->
+    <string name="theme_auto_switch_mode_error">Automatic light condition change mode is enabled. Manual switching is not possible.</string>
+
+    <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_preventpower">prevent power key</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_preventpower">Allows an application to override the power key</string>
+    
+     <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permlab_recordScreen">Record content being displayed</string>
+    <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+    <string name="permdesc_recordScreen">Allows the app to
+        record the users screen.</string>
 
 </resources>

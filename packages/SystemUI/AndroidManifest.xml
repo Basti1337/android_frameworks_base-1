@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.ACCESS_ALL_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.CAMERA" />
+
     <uses-permission android:name="android.permission.INJECT_EVENTS" />
     <uses-permission android:name="android.permission.DUMP" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
@@ -18,6 +18,8 @@
     <uses-permission android:name="android.permission.STATUS_BAR" />
     <uses-permission android:name="android.permission.EXPAND_STATUS_BAR" />
     <uses-permission android:name="android.permission.REMOTE_AUDIO_PLAYBACK" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.CAPTURE_AUDIO_OUTPUT" />
 
     <uses-permission android:name="android.permission.MANAGE_USERS" />
     <uses-permission android:name="android.permission.READ_PROFILE" />
@@ -72,12 +74,9 @@
 
     <!-- Keyguard -->
     <uses-permission android:name="android.permission.CONTROL_KEYGUARD" />
- 
-    <!--Halo-->
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
-    <activity android:name="com.android.systemui.Transparent"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+    <!-- Wifi Display -->
+    <uses-permission android:name="android.permission.CONFIGURE_WIFI_DISPLAY" />
 
     <!-- Kill app permission -->
     <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
@@ -86,11 +85,11 @@
     <uses-permission android:name="android.permission.READ_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
 
-    <!-- Active display -->
-    <uses-permission android:name="android.permission.SYSTEM_NOTIFICATION_LISTENER" />
-
     <!-- Reboot -->
     <uses-permission android:name="android.permission.REBOOT" />
+
+    <!-- Active display -->
+    <uses-permission android:name="android.permission.SYSTEM_NOTIFICATION_LISTENER" />
 
     <!-- Record Audio QuickRecord -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -98,9 +97,6 @@
     <!-- Development shortcut -->
     <uses-permission android:name="android.permission.CLEAR_APP_USER_DATA" />
     <uses-permission android:name="android.permission.FORCE_STOP_PACKAGES" />
-
-    <!-- Wifi Display -->
-    <uses-permission android:name="android.permission.CONFIGURE_WIFI_DISPLAY" />
 
     <application
         android:persistent="true"
@@ -126,21 +122,11 @@
             android:process=":screenshot"
             android:exported="false" />
 
-        <receiver android:name=".screenshot.TrashScreenshot"
+        <receiver android:name=".screenshot.DeleteScreenshot"
                 android:exported="true" />
 
         <service android:name=".LoadAverageService"
                 android:exported="true" />
-
-	<service android:name=".CPUInfoService"
-                android:exported="true" />
-
-        <service android:name=".screenstate.ScreenStateService"
-                android:exported="true" >
-            <intent-filter>
-               <android name="android.intent.action.SCREEN_STATE_SERVICE_UPDATE"/>
-            </intent-filter>
-        </service>
 
         <service android:name=".ImageWallpaper"
                 android:permission="android.permission.BIND_WALLPAPER"
@@ -151,6 +137,12 @@
         <receiver android:name=".BootReceiver" androidprv:primaryUserOnly="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".ReminderReceiver">
+            <intent-filter>
+                <action android:name="com.android.systemui.POST_REMINDER_NOTIFY"/>
             </intent-filter>
         </receiver>
 
@@ -245,7 +237,7 @@
             android:configChanges="orientation|keyboardHidden|screenSize"
             android:excludeFromRecents="true"
             android:taskAffinity="com.android.systemui.timedialog.MusicTileTimeDialog"
-           android:launchMode="singleInstance" >
+            android:launchMode="singleInstance" >
             <intent-filter>
                 <action android:name="com.android.systemui.timedialog.MusicTileTimeDialog" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -397,20 +389,6 @@
             </intent-filter>
         </activity>
 
-        <!-- extremely secret launcher shortcut -->
-        <activity
-            android:name="com.android.systemui.shortcuts.ChamberOfSecrets"
-            android:label="@string/shortcut_chamber"
-            android:icon="@drawable/ic_qs_reboot_recovery"
-            android:theme="@android:style/Theme.NoDisplay"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="com.android.systemui.SHORTCUT_EXTRA" />
-            </intent-filter>
-        </activity>
-
         <!-- platform logo easter egg activity -->
         <activity
             android:name=".DessertCase"
@@ -434,27 +412,14 @@
             android:name=".DessertCaseDream"
             android:exported="true"
             android:label="@string/dessert_case"
-            android:enabled="true"
+            android:enabled="false"
             android:process=":sweetsweetdesserts"
             >
             <intent-filter>
                 <action android:name="android.service.dreams.DreamService" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
-            <meta-data
-                android:name="android.service.dream"
-                android:resource="@xml/dream_info" />
         </service>
-
-        <activity android:name=".DessertCaseDreamSettings"
-            android:process=":sweetsweetdesserts"
-            android:taskAffinity=""
-            android:excludeFromRecents="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
 
         <activity android:name=".Somnambulator"
             android:label="@string/start_dreams"
@@ -476,6 +441,7 @@
             </intent-filter>
         </activity>
 
+        <!-- Active display -->
         <activity android:name=".statusbar.policy.activedisplay.DummyActivity"
                   android:label=""
                   android:taskAffinity=""
@@ -483,32 +449,6 @@
                   android:exported="true"
                   android:theme="@style/Theme.DummyActivity">
         </activity>
-
-        <activity android:name="com.android.systemui.Transparent"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
-
-        <activity android:name=".statusbar.sidebar.SidebarConfigurationActivity"
-                  android:label="@string/title_activity_sidebar_configuration"
-
-                  android:taskAffinity=""
-                  android:excludeFromRecents="true"
-                  android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-            </intent-filter>
-        </activity>
-
-        <provider
-            android:name=".statusbar.sidebar.SidebarContentProvider"
-            android:authorities="org.chameleonos.sidebar.contentprovider" >
-        </provider>
-
-        <service android:name=".powersaver.PowerSaverService"
-            android:exported="true" >
-            <intent-filter>
-                <android name="android.intent.action.POWER_SAVER_SERVICE_UPDATE"/>
-            </intent-filter>
-        </service>
 
     </application>
 </manifest>

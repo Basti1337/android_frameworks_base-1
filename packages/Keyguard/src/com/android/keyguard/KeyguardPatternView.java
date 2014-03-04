@@ -90,7 +90,7 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
     private SecurityMessageDisplay mSecurityMessageDisplay;
     private View mEcaView;
     private Drawable mBouncerFrame;
-	
+
     private GestureDetector mDoubleTapGesture;
 
     enum FooterMode {
@@ -120,7 +120,7 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
         super.onFinishInflate();
         mLockPatternUtils = mLockPatternUtils == null
                 ? new LockPatternUtils(mContext) : mLockPatternUtils;
-				
+
         mDoubleTapGesture = new GestureDetector(mContext,
                 new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -130,7 +130,6 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
                 return true;
             }
         });
-
 
         mLockPatternView = (LockPatternView) findViewById(R.id.lockPatternView);
         mLockPatternView.setSaveEnabled(false);
@@ -145,7 +144,7 @@ public class KeyguardPatternView extends LinearLayout implements KeyguardSecurit
         mLockPatternView.setTactileFeedbackEnabled(mLockPatternUtils.isTactileFeedbackEnabled());
 
         mLockPatternView.setLockPatternSize(mLockPatternUtils.getLockPatternSize());
-		
+
         if (Settings.System.getInt(mContext.getContentResolver(),
                     Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
             mLockPatternView.setOnTouchListener(new OnTouchListener() {

@@ -112,6 +112,13 @@ public class Build {
         public static final String CODENAME = getString("ro.build.version.codename");
 
         /**
+         * The current version string that defines the fusion version
+         * the device is on.
+         * @hide
+         */
+        public static final String FUSION = getString("ro.fusion.version");
+
+        /**
          * The SDK version to use when accessing resources.
          * Use the current SDK version code.  If we are a development build,
          * also allow the previous SDK version + 1.

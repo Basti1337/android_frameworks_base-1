@@ -51,7 +51,7 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
     private Drawable mBouncerFrame;
     protected boolean mEnableHaptics;
     private boolean mQuickUnlock;
-	
+
     private GestureDetector mDoubleTapGesture;
 
     // To avoid accidental lockout due to events while the device in in the pocket, ignore
@@ -107,7 +107,7 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
     @Override
     protected void onFinishInflate() {
         mLockPatternUtils = new LockPatternUtils(mContext);
-		
+
         mDoubleTapGesture = new GestureDetector(mContext,
                 new GestureDetector.SimpleOnGestureListener() {
             @Override
@@ -122,16 +122,16 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
         mPasswordEntry.setOnEditorActionListener(this);
         mPasswordEntry.addTextChangedListener(this);
 
-        mDoubleTapGesture = new GestureDetector(mContext,
-                new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDoubleTap(MotionEvent e) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                if (pm != null) pm.goToSleep(e.getEventTime());
-                return true;
-            }
-        });
-		
+        if (Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
+            mPasswordEntry.setOnTouchListener(new OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return mDoubleTapGesture.onTouchEvent(event);
+                }
+            });
+        }
+
         // Set selected property on so the view can send accessibility events.
         mPasswordEntry.setSelected(true);
 
@@ -141,7 +141,7 @@ public abstract class KeyguardAbsKeyInputView extends LinearLayout
                 mCallback.userActivity(0); // TODO: customize timeout for text?
             }
         });
-		
+
         mQuickUnlock = (Settings.System.getInt(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_QUICK_UNLOCK_CONTROL, 0) == 1);
 

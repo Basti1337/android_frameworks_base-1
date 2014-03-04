@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2007 The Android Open Source Project
- * Modification copyright (C) 2014 - Fusion Project - Credit zst123 "XuiMod"
+ * This code has been modified. Portions copyright (C) 2013-2014, Dokdo Project - Gwon Hyeok
+ * Thx to zst123 (https://github.com/zst123/XuiMod)
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -58,7 +60,7 @@ import android.view.accessibility.AccessibilityManager;
  * <a href="{@docRoot}guide/topics/ui/notifiers/toasts.html">Toast Notifications</a> developer
  * guide.</p>
  * </div>
- */ 
+ */
 public class Toast {
     static final String TAG = "Toast";
     static final boolean localLOGV = false;
@@ -314,7 +316,7 @@ public class Toast {
 
         private final WindowManager.LayoutParams mParams = new WindowManager.LayoutParams();
 
-        Handler mHandler = new Handler() {
+        Handler mHandler = new Handler() { 
             @Override
             public void handleMessage(Message msg) {
                 switch (msg.what) {
@@ -324,7 +326,7 @@ public class Toast {
                 case MSG_HIDE:
                     handleHide();
                     break;
-                }
+                } 
             }
         };
 
@@ -333,10 +335,8 @@ public class Toast {
         float mHorizontalMargin;
         float mVerticalMargin;
 
-
         View mView;
         View mNextView;
-
         WindowManager mWM;
 
         TN() {
@@ -346,7 +346,7 @@ public class Toast {
             params.height = WindowManager.LayoutParams.WRAP_CONTENT;
             params.width = WindowManager.LayoutParams.WRAP_CONTENT;
             params.format = PixelFormat.TRANSLUCENT;
-	        params.windowAnimations = com.android.internal.R.style.Animation_Toast;
+	    params.windowAnimations = com.android.internal.R.style.Animation_Toast;
             params.type = WindowManager.LayoutParams.TYPE_TOAST;
             params.setTitle("Toast");
             params.flags = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
@@ -360,7 +360,7 @@ public class Toast {
         @Override
         public void show() {
             if (localLOGV) Log.v(TAG, "SHOW: " + this);
-            mHandler.sendEmptyMessage(MSG_SHOW);
+            mHandler.sendEmptyMessage(MSG_SHOW); 
         }
 
         /**
@@ -373,7 +373,7 @@ public class Toast {
         }
 
         public void cancel() {
-            mHandler.removeMessages(MSG_SHOW);
+            mHandler.removeMessages(MSG_SHOW); 
         }
 
         public void handleShow() {
@@ -387,62 +387,56 @@ public class Toast {
                 if (context.getApplicationContext() != null) {
                     // Use application context, except when called from system
                     // service where there is no application context.
-                    context = context.getApplicationContext();
+                    context = context.getApplicationContext(); 
                 }
                 mWM = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
                 // We can resolve the Gravity here by using the Locale for getting
                 // the layout direction
                 final Configuration config = mView.getContext().getResources().getConfiguration();
                 final int gravity = Gravity.getAbsoluteGravity(mGravity, config.getLayoutDirection());
-                switch(Settings.System.getInt(context.getContentResolver(), Settings.System.ACTIVITY_ANIMATION_CONTROLS[10], 1)) {
+            switch(Settings.System.getInt(context.getContentResolver(), Settings.System.TOAST_ANIMATION, 1)) {
                 case 0:
-	                mParams.windowAnimations = -1;
-	                break;
+                mParams.windowAnimations = -1;
+                break;
                 case 1:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast;
+                break;
                 case 2:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Fade;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Fade;
+                break;
                 case 3:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideRight;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideRight;
+                break;
                 case 4:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideLeft;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideLeft;
+                break;
                 case 5:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Xylon;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Xylon;
+                break;
                 case 6:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Toko;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Toko;
+                break;
                 case 7:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Tn;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Tn;
+                break;
                 case 8:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Honami;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Honami;
+                break;
                 case 9:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_FastFade;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_FastFade;
+                break;
                 case 10:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFade;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFade;
+                break;
                 case 11:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeCenter;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeCenter;
+                break;
                 case 12:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeBottom;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_GrowFadeBottom;
+                break;
                 case 13:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Translucent;
-	                break;
-                case 14:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideLeftRight;
-	                break;
-                case 15:
-	                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_SlideRightLeft;
-	                break;
+                mParams.windowAnimations = com.android.internal.R.style.Animation_Toast_Translucent;
+                break;
                 }
                 mParams.gravity = gravity;
                 if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.FILL_HORIZONTAL) {
@@ -479,7 +473,7 @@ public class Toast {
             event.setPackageName(mView.getContext().getPackageName());
             mView.dispatchPopulateAccessibilityEvent(event);
             accessibilityManager.sendAccessibilityEvent(event);
-        }
+        }        
 
         public void handleHide() {
             if (localLOGV) Log.v(TAG, "HANDLE HIDE: " + this + " mView=" + mView);

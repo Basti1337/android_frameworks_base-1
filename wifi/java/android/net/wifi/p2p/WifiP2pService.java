@@ -315,7 +315,7 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
         mContext = context;
 
         //STOPSHIP: get this from native side
-        mInterface = SystemProperties.get("wifi.p2pinterface", "p2p0");
+        mInterface = "p2p0";
         mNetworkInfo = new NetworkInfo(ConnectivityManager.TYPE_WIFI_P2P, 0, NETWORKTYPE, "");
 
         mP2pSupported = mContext.getPackageManager().hasSystemFeature(
@@ -932,10 +932,8 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
                     break;
                 case WifiP2pManager.DISCOVER_PEERS:
                     if (mDiscoveryBlocked) {
-                        /* do not send discovery failure to apps.
-                         since discovery is postponed and not failed */
-                        mDiscoveryPostponed = true;
-                        logi("P2P_FIND is deffered");
+                        replyToMessage(message, WifiP2pManager.DISCOVER_PEERS_FAILED,
+                                WifiP2pManager.BUSY);
                         break;
                     }
                     // do not send service discovery request while normal find operation.
@@ -1794,7 +1792,6 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
                     if (DBG) logd(getName() + " remove group");
                     if (mWifiNative.p2pGroupRemove(mGroup.getInterface())) {
                         transitionTo(mOngoingGroupRemovalState);
-                        mWifiNative.p2pFlush();
                         replyToMessage(message, WifiP2pManager.REMOVE_GROUP_SUCCEEDED);
                     } else {
                         handleGroupRemoved();
@@ -1897,6 +1894,7 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
                                     mSavedPeerConfig.deviceAddress, false)) {
                                 // not found the client on the list
                                 loge("Already removed the client, ignore");
+                                break;
                             }
                             // try invitation.
                             sendMessage(WifiP2pManager.CONNECT, mSavedPeerConfig);
@@ -2185,7 +2183,6 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
         ViewGroup group = (ViewGroup) textEntryView.findViewById(R.id.info);
         addRowToDialog(group, R.string.wifi_p2p_from_message, getDeviceName(
                 mSavedPeerConfig.deviceAddress));
-
         final EditText pin = (EditText) textEntryView.findViewById(R.id.wifi_p2p_wps_pin);
 
         AlertDialog dialog = new AlertDialog.Builder(mContext)
@@ -2537,6 +2534,10 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
     private String getDeviceName(String deviceAddress) {
         WifiP2pDevice d = mPeers.get(deviceAddress);
         if (d != null) {
+                String deviceName = d.deviceName;
+                if (deviceName.equals("")) {
+                    return deviceAddress;
+                }
                 return d.deviceName;
         }
         //Treat the address as name if there is no match
@@ -2636,19 +2637,17 @@ public class WifiP2pService extends IWifiP2pManager.Stub {
         mNetworkInfo.setDetailedState(NetworkInfo.DetailedState.FAILED, null, null);
         sendP2pConnectionChangedBroadcast();
 
-        if (mAutonomousGroup == false) {
-            // Remove only the peer we failed to connect to so that other devices discovered
-            // that have not timed out still remain in list for connection
-            boolean peersChanged = mPeers.remove(mPeersLostDuringConnection);
-            if (mPeers.remove(mSavedPeerConfig.deviceAddress) != null) {
-                peersChanged = true;
-            }
-            if (peersChanged) {
-                sendPeersChangedBroadcast();
-            }
-
-            mPeersLostDuringConnection.clear();
+        // Remove only the peer we failed to connect to so that other devices discovered
+        // that have not timed out still remain in list for connection
+        boolean peersChanged = mPeers.remove(mPeersLostDuringConnection);
+        if (mPeers.remove(mSavedPeerConfig.deviceAddress) != null) {
+            peersChanged = true;
         }
+        if (peersChanged) {
+            sendPeersChangedBroadcast();
+        }
+
+        mPeersLostDuringConnection.clear();
         mServiceDiscReqId = null;
         sendMessage(WifiP2pManager.DISCOVER_PEERS);
     }

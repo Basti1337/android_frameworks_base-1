@@ -115,7 +115,6 @@ public class Recents extends SystemUI implements RecentsComponent {
                         .getDimensionPixelSize(R.dimen.status_bar_recents_thumbnail_width);
                 float thumbHeight = res
                         .getDimensionPixelSize(R.dimen.status_bar_recents_thumbnail_height);
-
                 if (first == null) {
                     throw new RuntimeException("Recents thumbnail is null");
                 }

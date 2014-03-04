@@ -1,6 +1,5 @@
 /*
  * Copyright (C) 2008 The Android Open Source Project
- * Copyright (C) 2013 The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +14,7 @@
  * limitations under the License.
  */
 
+
 package com.android.server.power;
 
 import android.app.ActivityManagerNative;
@@ -22,7 +22,6 @@ import android.app.AlertDialog;
 import android.app.FusionBusyDialog;
 import android.app.Dialog;
 import android.app.IActivityManager;
-import android.app.KeyguardManager;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.IBluetoothManager;
@@ -34,8 +33,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Handler;
-import android.os.IBinder;
-import android.os.IPowerManager;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.ServiceManager;
@@ -46,7 +43,6 @@ import android.os.Vibrator;
 import android.os.SystemVibrator;
 import android.os.storage.IMountService;
 import android.os.storage.IMountShutdownObserver;
-import android.provider.Settings;
 
 import com.android.internal.telephony.ITelephony;
 
@@ -73,7 +69,6 @@ public final class ShutdownThread extends Thread {
     private static boolean mReboot;
     private static boolean mRebootSafeMode;
     private static String mRebootReason;
-    private static boolean mRebootHot = false;
 
     // Provides shutdown assurance in case the system_server is killed
     public static final String SHUTDOWN_ACTION_PROPERTY = "sys.shutdown.requested";
@@ -121,37 +116,20 @@ public final class ShutdownThread extends Thread {
             }
         }
 
-        final int titleResourceId;
-        final int resourceId;
+        final int longPressBehavior = context.getResources().getInteger(
+                        com.android.internal.R.integer.config_longPressOnPowerBehavior);
+        final int resourceId = mRebootSafeMode
+                ? com.android.internal.R.string.reboot_safemode_confirm
+                : (longPressBehavior == 2
+                        ? com.android.internal.R.string.shutdown_confirm_question
+                        : com.android.internal.R.string.shutdown_confirm);
 
-        Log.d(TAG, "Notifying thread to start shutdown");
-
-        if (mRebootSafeMode) {
-            titleResourceId = com.android.internal.R.string.reboot_safemode_title;
-            resourceId = com.android.internal.R.string.reboot_safemode_confirm;
-        } else if (mReboot) {
-            titleResourceId = com.android.internal.R.string.reboot_system;
-            resourceId = com.android.internal.R.string.reboot_confirm;
-        } else {
-
-            final int longPressBehavior = context.getResources().getInteger(
-                            com.android.internal.R.integer.config_longPressOnPowerBehavior);
-
-            titleResourceId = com.android.internal.R.string.power_off;
-            if (longPressBehavior == 2) {
-                resourceId = com.android.internal.R.string.shutdown_confirm_question;
-            } else {
-                resourceId = com.android.internal.R.string.shutdown_confirm;
-            }
-
-            Log.d(TAG, "longPressBehavior=" + longPressBehavior);
-        }
+        Log.d(TAG, "Notifying thread to start shutdown longPressBehavior=" + longPressBehavior);
 
         if (confirm) {
             final CloseDialogReceiver closer = new CloseDialogReceiver(context);
             if (sConfirmDialog != null) {
                 sConfirmDialog.dismiss();
-                sConfirmDialog = null;
             }
             if (mReboot && !mRebootSafeMode){
                 sConfirmDialog = new AlertDialog.Builder(context)
@@ -173,9 +151,6 @@ public final class ShutdownThread extends Thread {
                                 new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int which) {
                                 mReboot = true;
-                                if (mRebootReason != null && mRebootReason.equals("hot")) {
-                                    mRebootHot = true;
-                                }
                                 beginShutdownSequence(context);
                             }
                         })
@@ -220,10 +195,6 @@ public final class ShutdownThread extends Thread {
         } else {
             beginShutdownSequence(context);
         }
-    }
-
-    private static boolean advancedRebootEnabled(Context context) {
-        return Settings.Secure.getInt(context.getContentResolver(), Settings.Secure.ADVANCED_REBOOT, 1) == 1;
     }
 
     private static class CloseDialogReceiver extends BroadcastReceiver
@@ -358,58 +329,56 @@ public final class ShutdownThread extends Thread {
             }
         };
 
-        if (!mRebootHot) {
-            /*
-             * Write a system property in case the system_server reboots before we
-             * get to the actual hardware restart. If that happens, we'll retry at
-             * the beginning of the SystemServer startup.
-             */
-            {
-                String reason = (mReboot ? "1" : "0") + (mRebootReason != null ? mRebootReason : "");
-                SystemProperties.set(SHUTDOWN_ACTION_PROPERTY, reason);
-            }
+        /*
+         * Write a system property in case the system_server reboots before we
+         * get to the actual hardware restart. If that happens, we'll retry at
+         * the beginning of the SystemServer startup.
+         */
+        {
+            String reason = (mReboot ? "1" : "0") + (mRebootReason != null ? mRebootReason : "");
+            SystemProperties.set(SHUTDOWN_ACTION_PROPERTY, reason);
+        }
 
-            /*
-             * If we are rebooting into safe mode, write a system property
-             * indicating so.
-             */
-            if (mRebootSafeMode) {
-                SystemProperties.set(REBOOT_SAFEMODE_PROPERTY, "1");
-            }
+        /*
+         * If we are rebooting into safe mode, write a system property
+         * indicating so.
+         */
+        if (mRebootSafeMode) {
+            SystemProperties.set(REBOOT_SAFEMODE_PROPERTY, "1");
+        }
 
-            Log.i(TAG, "Sending shutdown broadcast...");
+        Log.i(TAG, "Sending shutdown broadcast...");
 
-            // First send the high-level shut down broadcast.
-            mActionDone = false;
-            Intent intent = new Intent(Intent.ACTION_SHUTDOWN);
-            intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-            mContext.sendOrderedBroadcastAsUser(intent,
-                    UserHandle.ALL, null, br, mHandler, 0, null, null);
+        // First send the high-level shut down broadcast.
+        mActionDone = false;
+        Intent intent = new Intent(Intent.ACTION_SHUTDOWN);
+        intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
+        mContext.sendOrderedBroadcastAsUser(intent,
+                UserHandle.ALL, null, br, mHandler, 0, null, null);
 
-            final long endTime = SystemClock.elapsedRealtime() + MAX_BROADCAST_TIME;
-            synchronized (mActionDoneSync) {
-                while (!mActionDone) {
-                    long delay = endTime - SystemClock.elapsedRealtime();
-                    if (delay <= 0) {
-                        Log.w(TAG, "Shutdown broadcast timed out");
-                        break;
-                    }
-                    try {
-                        mActionDoneSync.wait(delay);
-                    } catch (InterruptedException e) {
-                    }
+        final long endTime = SystemClock.elapsedRealtime() + MAX_BROADCAST_TIME;
+        synchronized (mActionDoneSync) {
+            while (!mActionDone) {
+                long delay = endTime - SystemClock.elapsedRealtime();
+                if (delay <= 0) {
+                    Log.w(TAG, "Shutdown broadcast timed out");
+                    break;
                 }
-            }
-
-            Log.i(TAG, "Shutting down activity manager...");
-
-            final IActivityManager am =
-                ActivityManagerNative.asInterface(ServiceManager.checkService("activity"));
-            if (am != null) {
                 try {
-                    am.shutdown(MAX_BROADCAST_TIME);
-                } catch (RemoteException e) {
+                    mActionDoneSync.wait(delay);
+                } catch (InterruptedException e) {
                 }
+            }
+        }
+
+        Log.i(TAG, "Shutting down activity manager...");
+
+        final IActivityManager am =
+            ActivityManagerNative.asInterface(ServiceManager.checkService("activity"));
+        if (am != null) {
+            try {
+                am.shutdown(MAX_BROADCAST_TIME);
+            } catch (RemoteException e) {
             }
         }
 
@@ -577,19 +546,6 @@ public final class ShutdownThread extends Thread {
     public static void rebootOrShutdown(boolean reboot, String reason) {
         if (reboot) {
             Log.i(TAG, "Rebooting, reason: " + reason);
-            // check if hot reboot requested
-            if (mRebootHot) {
-                // crash system server to restart Android framework
-                try {
-                    IBinder b = ServiceManager.getService(Context.POWER_SERVICE);
-                    IPowerManager pm = IPowerManager.Stub.asInterface(b);
-                    pm.crash("Crashed by Hot Reboot");
-                } catch (RemoteException e) {
-                    Log.e(TAG, "Hot reboot failed, will attempt normal reboot instead", e);
-                    reason = null;
-                }
-            }
-            // normal reboot
             PowerManagerService.lowLevelReboot(reason);
             Log.e(TAG, "Reboot failed, will attempt shutdown instead");
         } else if (SHUTDOWN_VIBRATE_MS > 0) {

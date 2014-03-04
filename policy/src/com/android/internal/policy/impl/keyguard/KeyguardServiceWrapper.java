@@ -229,5 +229,4 @@ public class KeyguardServiceWrapper implements IKeyguardService {
     public IBinder asBinder() {
         return mService.asBinder();
     }
-
 }

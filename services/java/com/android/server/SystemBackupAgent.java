@@ -17,7 +17,6 @@
 package com.android.server;
 
 
-import android.app.backup.AbsoluteFileBackupHelper;
 import android.app.backup.BackupDataInput;
 import android.app.backup.BackupDataOutput;
 import android.app.backup.BackupAgentHelper;
@@ -46,11 +45,6 @@ public class SystemBackupAgent extends BackupAgentHelper {
     // taken to support the legacy backed-up datasets.
     private static final String WALLPAPER_IMAGE_FILENAME = "wallpaper";
     private static final String WALLPAPER_INFO_FILENAME = "wallpaper_info.xml";
-
-    private static final String PROFILES_FILENAME =
-            ProfileManagerService.PROFILE_FILE.getName();
-    private static final String PROFILES_FILE_DIRECTORY =
-            ProfileManagerService.PROFILE_FILE.getParentFile().getAbsolutePath();
 
     // TODO: Will need to change if backing up non-primary user's wallpaper
     private static final String WALLPAPER_IMAGE_DIR =
@@ -81,16 +75,13 @@ public class SystemBackupAgent extends BackupAgentHelper {
             keys = new String[] { WALLPAPER_INFO_KEY };
         }
         addHelper("wallpaper", new WallpaperBackupHelper(SystemBackupAgent.this, files, keys));
-        addHelper("profiles", new AbsoluteFileBackupHelper(SystemBackupAgent.this,
-                    ProfileManagerService.PROFILE_FILE.getAbsolutePath()));
         super.onBackup(oldState, data, newState);
     }
 
     @Override
     public void onFullBackup(FullBackupDataOutput data) throws IOException {
-        // At present we back up only the wallpaper and profiles
+        // At present we back up only the wallpaper
         fullWallpaperBackup(data);
-        fullProfilesBackup(data);
     }
 
     private void fullWallpaperBackup(FullBackupDataOutput output) {
@@ -104,11 +95,6 @@ public class SystemBackupAgent extends BackupAgentHelper {
                 WALLPAPER_IMAGE_DIR, WALLPAPER_IMAGE, output.getData());
     }
 
-    private void fullProfilesBackup(FullBackupDataOutput output) {
-        FullBackup.backupToTar(getPackageName(), FullBackup.ROOT_TREE_TOKEN, null,
-                PROFILES_FILE_DIRECTORY, PROFILES_FILENAME, output.getData());
-    }
-
     @Override
     public void onRestore(BackupDataInput data, int appVersionCode, ParcelFileDescriptor newState)
             throws IOException {
@@ -119,19 +105,13 @@ public class SystemBackupAgent extends BackupAgentHelper {
         addHelper("system_files", new WallpaperBackupHelper(SystemBackupAgent.this,
                 new String[] { WALLPAPER_IMAGE },
                 new String[] { WALLPAPER_IMAGE_KEY} ));
-        addHelper("profiles", new AbsoluteFileBackupHelper(SystemBackupAgent.this,
-                ProfileManagerService.PROFILE_FILE.getAbsolutePath()));
 
         try {
             super.onRestore(data, appVersionCode, newState);
 
             WallpaperManagerService wallpaper = (WallpaperManagerService)ServiceManager.getService(
                     Context.WALLPAPER_SERVICE);
-            ProfileManagerService profiles = (ProfileManagerService)ServiceManager.getService(
-                    Context.PROFILE_SERVICE);
-
             wallpaper.settingsRestored();
-            profiles.settingsRestored();
         } catch (IOException ex) {
             // If there was a failure, delete everything for the wallpaper, this is too aggressive,
             // but this is hopefully a rare failure.
@@ -149,7 +129,6 @@ public class SystemBackupAgent extends BackupAgentHelper {
 
         // Bits to indicate postprocessing we may need to perform
         boolean restoredWallpaper = false;
-        boolean restoredProfiles = false;
 
         File outFile = null;
         // Various domain+files we understand a priori
@@ -160,9 +139,6 @@ public class SystemBackupAgent extends BackupAgentHelper {
             } else if (path.equals(WALLPAPER_IMAGE_FILENAME)) {
                 outFile = new File(WALLPAPER_IMAGE);
                 restoredWallpaper = true;
-            } else if (path.equals(PROFILES_FILENAME)) {
-                outFile = ProfileManagerService.PROFILE_FILE;
-                restoredProfiles = true;
             }
         }
 
@@ -177,11 +153,6 @@ public class SystemBackupAgent extends BackupAgentHelper {
                         (WallpaperManagerService)ServiceManager.getService(
                         Context.WALLPAPER_SERVICE);
                 wallpaper.settingsRestored();
-            }
-            if (restoredProfiles) {
-                ProfileManagerService profiles = (ProfileManagerService)
-                        ServiceManager.getService(Context.PROFILE_SERVICE);
-                profiles.settingsRestored();
             }
         } catch (IOException e) {
             if (restoredWallpaper) {

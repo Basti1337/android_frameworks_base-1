@@ -169,8 +169,6 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
     private final static boolean LOG_RENDERER = false;
     private final static boolean LOG_RENDERER_DRAW_FRAME = false;
     private final static boolean LOG_EGL = false;
-
-    private final static boolean RGB565 = SystemProperties.getBoolean("ro.opengles.surface.rgb565", false);
     /**
      * The renderer only renders
      * when the surface is created, or when {@link #requestRender} is called.
@@ -976,7 +974,7 @@ public class GLSurfaceView extends SurfaceView implements SurfaceHolder.Callback
      */
     private class SimpleEGLConfigChooser extends ComponentSizeChooser {
         public SimpleEGLConfigChooser(boolean withDepthBuffer) {
-            super(RGB565 ? 5 : 8, RGB565 ? 6 : 8, RGB565 ? 5 : 8, 0, withDepthBuffer ? 16 : 0, 0);
+            super(8, 8, 8, 0, withDepthBuffer ? 16 : 0, 0);
         }
     }
 

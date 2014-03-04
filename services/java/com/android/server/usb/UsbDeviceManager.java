@@ -111,6 +111,7 @@ public class UsbDeviceManager {
     private UsbSettingsManager mCurrentSettings;
     private NotificationManager mNotificationManager;
     private final boolean mHasUsbAccessory;
+    private boolean mUseUsbNotification;
     private boolean mAdbEnabled;
     private boolean mAudioSourceEnabled;
     private Map<String, List<Pair<String, String>>> mOemModeMap;
@@ -195,6 +196,27 @@ public class UsbDeviceManager {
 
         mNotificationManager = (NotificationManager)
                 mContext.getSystemService(Context.NOTIFICATION_SERVICE);
+
+        // We do not show the USB notification if the primary volume supports mass storage, unless
+        // persist.sys.usb.config is set to mtp,adb. This will allow the USB notification to show
+        // on devices with mtp as default and mass storage enabled on primary, so user can choose
+        // between mtp, ptp, and mass storage. The legacy mass storage UI will be used otherwise.
+        boolean massStorageSupported = false;
+        final StorageManager storageManager = StorageManager.from(mContext);
+        final StorageVolume primary = storageManager.getPrimaryVolume();
+
+        if (Settings.Secure.getInt(mContentResolver,
+                Settings.Secure.USB_MASS_STORAGE_ENABLED, 0 ) == 1 ) {
+            massStorageSupported = primary != null && primary.allowMassStorage();
+        } else {
+            massStorageSupported = false;
+        }
+
+        if ("mtp,adb".equals(SystemProperties.get("persist.sys.usb.config"))) {
+            mUseUsbNotification = true;
+        } else {
+            mUseUsbNotification = !massStorageSupported;
+        }
 
         // make sure the ADB_ENABLED setting value matches the current state
         Settings.Global.putInt(mContentResolver, Settings.Global.ADB_ENABLED, mAdbEnabled ? 1 : 0);
@@ -368,10 +390,6 @@ public class UsbDeviceManager {
                             }
                         }
                 );
-
-                mContentResolver.registerContentObserver(
-                        Settings.Secure.getUriFor(Settings.Secure.ADB_PORT),
-                                false, new AdbSettingsObserver());
 
                 // Watch for USB configuration changes
                 mUEventObserver.startObserving(USB_STATE_MATCH);
@@ -668,7 +686,7 @@ public class UsbDeviceManager {
         }
 
         private void updateUsbNotification() {
-            if (mNotificationManager == null) return;
+            if (mNotificationManager == null || !mUseUsbNotification) return;
             int id = 0;
             Resources r = mContext.getResources();
             if (mConnected) {
@@ -678,7 +696,7 @@ public class UsbDeviceManager {
                     id = com.android.internal.R.string.usb_ptp_notification_title;
                 } else if (containsFunction(mCurrentFunctions,
                         UsbManager.USB_FUNCTION_MASS_STORAGE)) {
-                    id = com.android.internal.R.string.usb_mass_storage_notification_title;
+                    id = com.android.internal.R.string.usb_cd_installer_notification_title;
                 } else if (containsFunction(mCurrentFunctions, UsbManager.USB_FUNCTION_ACCESSORY)) {
                     id = com.android.internal.R.string.usb_accessory_notification_title;
                 } else {
@@ -726,11 +744,10 @@ public class UsbDeviceManager {
         private void updateAdbNotification() {
             if (mNotificationManager == null) return;
             final int id = com.android.internal.R.string.adb_active_notification_title;
-            if (mAdbEnabled && mConnected) {
-                if ("0".equals(SystemProperties.get("persist.adb.notify"))
-                 || Settings.Secure.getInt(mContext.getContentResolver(),
-                    Settings.Secure.ADB_NOTIFY, 1) == 0)
-                    return;
+            final boolean adbNotify = Settings.Secure.getInt(mContext.getContentResolver(),
+                    Settings.Secure.ADB_NOTIFY, 1) == 1;
+            if (mAdbEnabled && mConnected && adbNotify) {
+                if ("0".equals(SystemProperties.get("persist.adb.notify"))) return;
 
                 if (!mAdbNotificationShown) {
                     Resources r = mContext.getResources();

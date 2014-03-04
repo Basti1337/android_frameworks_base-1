@@ -66,7 +66,6 @@ import android.os.UserHandle;
 import android.os.Vibrator;
 import android.provider.Settings;
 import android.provider.Settings.System;
-import android.provider.Settings.SettingNotFoundException;
 import android.speech.RecognizerIntent;
 import android.telephony.PhoneStateListener;
 import android.telephony.TelephonyManager;
@@ -81,14 +80,9 @@ import com.android.internal.app.ThemeUtils;
 import com.android.internal.telephony.ITelephony;
 import com.android.internal.util.XmlUtils;
 
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserFactory;
 import org.xmlpull.v1.XmlPullParserException;
 
-import java.io.File;
 import java.io.FileDescriptor;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
@@ -202,10 +196,8 @@ public class AudioService extends IAudioService.Stub {
     private static final int MAX_BATCH_VOLUME_ADJUST_STEPS = 4;
 
     /* Sound effect file names  */
-    private static final String DEFAULT_SOUND_EFFECTS_PATH = Environment.getRootDirectory() + "/media/audio/ui/";
+    private static final String SOUND_EFFECTS_PATH = "/media/audio/ui/";
     private static final List<String> SOUND_EFFECT_FILES = new ArrayList<String>();
-    private String mActiveSoundEffectsPath = DEFAULT_SOUND_EFFECTS_PATH;
-    private XmlPullParser mActiveAudioAssetsXml = null;
 
     /* Sound effect file name mapping sound effect id (AudioManager.FX_xxx) to
      * file index in SOUND_EFFECT_FILES[] (first column) and indicating if effect
@@ -314,8 +306,6 @@ public class AudioService extends IAudioService.Stub {
      */
     // protected by mSettingsLock
     private int mRingerMode;
-    // last non-normal ringer mode
-    private int mLastSilentRingerMode = -1;
 
     /** @see System#MODE_RINGER_STREAMS_AFFECTED */
     private int mRingerModeAffectedStreams = 0;
@@ -452,10 +442,9 @@ public class AudioService extends IAudioService.Stub {
 
     private boolean mDockAudioMediaEnabled = true;
 
-    private boolean mForceAnalogDeskDock;
-    private boolean mForceAnalogCarDock;
-
     private int mDockState = Intent.EXTRA_DOCK_STATE_UNDOCKED;
+
+    private boolean mVolumeKeysControlMediaStream;
 
     // Used when safe volume warning message display is requested by setStreamVolume(). In this
     // case, the new requested volume, stream type and device are stored in mPendingVolumeCommand
@@ -471,8 +460,6 @@ public class AudioService extends IAudioService.Stub {
     private final Object mA2dpAvrcpLock = new Object();
     // If absolute volume is supported in AVRCP device
     private boolean mAvrcpAbsVolSupported = false;
-
-    private boolean mVolumeKeysControlRingStream;
 
     ///////////////////////////////////////////////////////////////////////////
     // Construction
@@ -560,9 +547,7 @@ public class AudioService extends IAudioService.Stub {
         intentFilter.addAction(Intent.ACTION_BOOT_COMPLETED);
         intentFilter.addAction(Intent.ACTION_SCREEN_ON);
         intentFilter.addAction(Intent.ACTION_SCREEN_OFF);
-        intentFilter.addAction(Intent.ACTION_USER_BACKGROUND);
         intentFilter.addAction(Intent.ACTION_USER_SWITCHED);
-        intentFilter.addAction(Intent.ACTION_HEADSET_PLUG);
 
         intentFilter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         // TODO merge orientation and rotation
@@ -596,12 +581,6 @@ public class AudioService extends IAudioService.Stub {
 
         mMasterVolumeRamp = context.getResources().getIntArray(
                 com.android.internal.R.array.config_masterVolumeRamp);
-
-        mForceAnalogDeskDock = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_forceAnalogDeskDock);
-
-        mForceAnalogCarDock = mContext.getResources().getBoolean(
-                com.android.internal.R.bool.config_forceAnalogCarDock);
 
     }
 
@@ -821,11 +800,10 @@ public class AudioService extends IAudioService.Stub {
 
             updateRingerModeAffectedStreams();
             readDockAudioSettings(cr);
-
             mSafeVolumeEnabled = new Boolean(safeVolumeEnabled(cr));
 
-            mVolumeKeysControlRingStream = Settings.System.getIntForUser(cr,
-                    Settings.System.VOLUME_KEYS_CONTROL_RING_STREAM, 1, UserHandle.USER_CURRENT) == 1;
+            mVolumeKeysControlMediaStream = Settings.System.getIntForUser(cr,
+                    Settings.System.VOLUME_KEYS_CONTROL_MEDIA_STREAM, 0, UserHandle.USER_CURRENT) == 1;
         }
 
         mLinkNotificationWithVolume = Settings.System.getIntForUser(cr,
@@ -1088,14 +1066,8 @@ public class AudioService extends IAudioService.Stub {
                 (mStreamVolumeAlias[streamType] == getMasterStreamType())) {
             int newRingerMode;
             if (index == 0) {
-                synchronized (mSettingsLock) {
-                    if (mLastSilentRingerMode != -1) {
-                        newRingerMode = mLastSilentRingerMode;
-                    } else {
-                        newRingerMode = mHasVibrator ? AudioManager.RINGER_MODE_VIBRATE
-                            : AudioManager.RINGER_MODE_SILENT;
-                    }
-                }
+                newRingerMode = mHasVibrator ? AudioManager.RINGER_MODE_VIBRATE
+                                              : AudioManager.RINGER_MODE_SILENT;
             } else {
                 newRingerMode = AudioManager.RINGER_MODE_NORMAL;
             }
@@ -1299,7 +1271,7 @@ public class AudioService extends IAudioService.Stub {
 
     // UI update and Broadcast Intent
     private void sendMasterVolumeUpdate(int flags, int oldVolume, int newVolume) {
-        masterVolumeChanged(flags);
+        mVolumePanel.postMasterVolumeChanged(flags);
 
         Intent intent = new Intent(AudioManager.MASTER_VOLUME_CHANGED_ACTION);
         intent.putExtra(AudioManager.EXTRA_PREV_MASTER_VOLUME_VALUE, oldVolume);
@@ -1309,7 +1281,7 @@ public class AudioService extends IAudioService.Stub {
 
     // UI update and Broadcast Intent
     private void sendMasterMuteUpdate(boolean muted, int flags) {
-        masterMuteChanged(flags);
+        mVolumePanel.postMasterMuteChanged(flags);
         broadcastMasterMuteStatus(muted);
     }
 
@@ -1522,13 +1494,6 @@ public class AudioService extends IAudioService.Stub {
         if ((ringerMode == AudioManager.RINGER_MODE_VIBRATE) && !mHasVibrator) {
             ringerMode = AudioManager.RINGER_MODE_SILENT;
         }
-
-        if ((ringerMode == AudioManager.RINGER_MODE_SILENT) ||
-            (ringerMode == AudioManager.RINGER_MODE_VIBRATE))
-            SystemProperties.set("persist.sys.silent", "1");
-        else
-            SystemProperties.set("persist.sys.silent", "0");
-
         if (ringerMode != getRingerMode()) {
             setRingerModeInt(ringerMode, true);
             // Send sticky broadcast
@@ -1539,9 +1504,6 @@ public class AudioService extends IAudioService.Stub {
     private void setRingerModeInt(int ringerMode, boolean persist) {
         synchronized(mSettingsLock) {
             mRingerMode = ringerMode;
-            if (ringerMode != AudioManager.RINGER_MODE_NORMAL) {
-                mLastSilentRingerMode = ringerMode;
-            }
         }
 
         // Mute stream if not previously muted by ringer mode and ringer mode
@@ -1834,11 +1796,6 @@ public class AudioService extends IAudioService.Stub {
 
     private static final String ASSET_FILE_VERSION = "1.0";
     private static final String GROUP_TOUCH_SOUNDS = "touch_sounds";
-    private static final String GROUP_LOCK_SOUNDS = "lock_sounds";
-    private static final String GROUP_CAMERA_SOUNDS = "camera_sounds";
-
-    private static final String CUSTOM_AUDIO_ASSETS_FILE = "audio_assets.xml";
-    private static final String CUSTOM_AUDIO_SYMLINK_PATH = "/data/system/soundlinks/";
 
     private static final int SOUND_EFECTS_LOAD_TIMEOUT_MS = 5000;
 
@@ -1852,89 +1809,24 @@ public class AudioService extends IAudioService.Stub {
             SOUND_EFFECT_FILES_MAP[i][0] = 0;
             SOUND_EFFECT_FILES_MAP[i][1] = -1;
         }
-
-        // Setup default symlinks for MediaActionSound sounds.
-        // See MediaActionSound.java for more details
-        File symlinkDir = new File(CUSTOM_AUDIO_SYMLINK_PATH);
-        symlinkDir.mkdirs();
-        symlinkDir.setReadable(true, false);
-        symlinkDir.setExecutable(true, false);
-        symlink("/system/media/audio/ui/camera_click.ogg",
-                CUSTOM_AUDIO_SYMLINK_PATH + "camera_click.ogg");
-        symlink("/system/media/audio/ui/camera_focus.ogg",
-                CUSTOM_AUDIO_SYMLINK_PATH + "camera_focus.ogg");
-        symlink("/system/media/audio/ui/VideoRecord.ogg",
-                CUSTOM_AUDIO_SYMLINK_PATH + "VideoRecord_start.ogg");
-        symlink("/system/media/audio/ui/VideoRecord.ogg",
-                CUSTOM_AUDIO_SYMLINK_PATH + "VideoRecord_stop.ogg");
-        
-        // Reset lock/unlock sounds
-        Settings.Global.putString(mContentResolver,
-                Settings.Global.LOCK_SOUND,
-                "/system/media/audio/ui/Lock.ogg");
-        Settings.Global.putString(mContentResolver,
-                Settings.Global.UNLOCK_SOUND,
-                "/system/media/audio/ui/Unlock.ogg");
-    }
-
-    private void symlink(String targetPath, String linkName) {
-        File existing = new File(linkName);
-        if (existing.exists() && !existing.delete()) {
-            Log.e(TAG, "Unable to delete symlink: " + linkName);
-        }
-        String[] cmd = new String[]{ "ln", "-s", targetPath, linkName };
-
-        try {
-            Runtime.getRuntime().exec(cmd);
-        } catch (IOException e) {
-            Log.e(TAG, "Unable to create symlink to " + linkName + ":", e);
-        }
-    }
-
-    private void reloadTouchSoundAssets() {
-        SOUND_EFFECT_FILES.clear();
-        loadTouchSoundAssets();
     }
 
     private void loadTouchSoundAssets() {
-        XmlPullParser parser = null;
+        XmlResourceParser parser = null;
 
         // only load assets once.
         if (!SOUND_EFFECT_FILES.isEmpty()) {
             return;
         }
 
-        // check if user has custom sounds
-        String customSoundsPath = Settings.System.getStringForUser(mContentResolver,
-                Settings.System.CUSTOM_SOUND_EFFECTS_PATH,
-                UserHandle.USER_CURRENT);
-
-        if (customSoundsPath != null) {
-            try {
-                mActiveSoundEffectsPath = customSoundsPath;
-                mActiveAudioAssetsXml = XmlPullParserFactory.newInstance().newPullParser();
-                mActiveAudioAssetsXml.setInput(new InputStreamReader(new FileInputStream(
-                        customSoundsPath + "/" + CUSTOM_AUDIO_ASSETS_FILE)));
-            } catch (IOException e) {
-                Log.e(TAG, "Unable to find audio assets XML", e);
-            } catch (XmlPullParserException e) {
-                Log.e(TAG, "Unable to parse audio assets XML", e);
-            }
-        } else {
-            mActiveSoundEffectsPath = DEFAULT_SOUND_EFFECTS_PATH;
-            mActiveAudioAssetsXml = mContext.getResources().getXml(com.android.internal.R.xml.audio_assets);
-        }
-
         loadTouchSoundAssetDefaults();
 
         try {
-            parser = mActiveAudioAssetsXml;
+            parser = mContext.getResources().getXml(com.android.internal.R.xml.audio_assets);
 
             XmlUtils.beginDocument(parser, TAG_AUDIO_ASSETS);
             String version = parser.getAttributeValue(null, ATTR_VERSION);
-            boolean inTouchSoundsGroup = false,
-                    inLockSoundsGroup = false,
-                    inCameraSoundsGroup = false;
+            boolean inTouchSoundsGroup = false;
 
             if (ASSET_FILE_VERSION.equals(version)) {
                 while (true) {
@@ -1976,72 +1868,8 @@ public class AudioService extends IAudioService.Stub {
                             SOUND_EFFECT_FILES.add(file);
                         }
                         SOUND_EFFECT_FILES_MAP[fx][0] = i;
-                    } else if (element.equals(TAG_GROUP)) {
-                        String name = parser.getAttributeValue(null, ATTR_GROUP_NAME);
-                        if (GROUP_LOCK_SOUNDS.equals(name)) {
-                            inLockSoundsGroup = true;
-                        }
-                        break;
                     } else {
                         break;
-                    }
-                }
-                while (inLockSoundsGroup) {
-                    XmlUtils.nextElement(parser);
-                    String element = parser.getName();
-                    if (element == null) {
-                        break;
-                    }
-                    if (element.equals(TAG_ASSET)) {
-                        String id = parser.getAttributeValue(null, ATTR_ASSET_ID);
-                        String file = parser.getAttributeValue(null, ATTR_ASSET_FILE);
-
-                        if (id.equals("FX_LOCK")) {
-                            Settings.Global.putString(mContentResolver,
-                                    Settings.Global.LOCK_SOUND,
-                                    mActiveSoundEffectsPath + file);
-                        } else if (id.equals("FX_UNLOCK")) {
-                            Settings.Global.putString(mContentResolver,
-                                    Settings.Global.UNLOCK_SOUND,
-                                    mActiveSoundEffectsPath + file);
-                        } else {
-                            Log.w(TAG, "Unrecognized lock sound ID: "+id);
-                        }
-                    } else if (element.equals(TAG_GROUP)) {
-                        String name = parser.getAttributeValue(null, ATTR_GROUP_NAME);
-                        if (GROUP_CAMERA_SOUNDS.equals(name)) {
-                            inCameraSoundsGroup = true;
-                        }
-                        break;
-                    } else {
-                        break;
-                    }
-                }
-                while (inCameraSoundsGroup) {
-                    XmlUtils.nextElement(parser);
-                    String element = parser.getName();
-                    if (element == null) {
-                        break;
-                    }
-                    if (element.equals(TAG_ASSET)) {
-                        String id = parser.getAttributeValue(null, ATTR_ASSET_ID);
-                        String file = parser.getAttributeValue(null, ATTR_ASSET_FILE);
-
-                        if (id.equals("CAMERA_SHUTTER")) {
-                            symlink(mActiveSoundEffectsPath + file,
-                                    CUSTOM_AUDIO_SYMLINK_PATH + "camera_click.ogg");
-                        } else if (id.equals("CAMERA_FOCUS")) {
-                            symlink(mActiveSoundEffectsPath + file,
-                                    CUSTOM_AUDIO_SYMLINK_PATH + "camera_focus.ogg");
-                        } else if (id.equals("VIDEO_REC_START")) {
-                            symlink(mActiveSoundEffectsPath + file,
-                                    CUSTOM_AUDIO_SYMLINK_PATH + "VideoRecord_start.ogg");
-                        } else if (id.equals("VIDEO_REC_STOP")) {
-                            symlink(mActiveSoundEffectsPath + file,
-                                    CUSTOM_AUDIO_SYMLINK_PATH + "VideoRecord_stop.ogg");
-                        } else {
-                            Log.w(TAG, "Unrecognized camera sound ID: "+id);
-                        }
                     }
                 }
             }
@@ -2052,8 +1880,8 @@ public class AudioService extends IAudioService.Stub {
         } catch (IOException e) {
             Log.w(TAG, "I/O exception reading touch sound assets", e);
         } finally {
-            if (parser != null && parser instanceof XmlResourceParser) {
-                ((XmlResourceParser)parser).close();
+            if (parser != null) {
+                parser.close();
             }
         }
     }
@@ -2730,7 +2558,6 @@ public class AudioService extends IAudioService.Stub {
                         if (mMusicActiveMs > UNSAFE_VOLUME_MUSIC_ACTIVE_MS_MAX) {
                             setSafeMediaVolumeEnabled(true);
                             mMusicActiveMs = 0;
-                            displaySafeVolumeWarning();
                         }
                     }
                 }
@@ -2799,15 +2626,11 @@ public class AudioService extends IAudioService.Stub {
                     //   (step <= oldIndex < 2 * step) is equivalent to: (old UI index == 1)
                     if (step <= oldIndex && oldIndex < 2 * step) {
                         ringerMode = RINGER_MODE_VIBRATE;
-                        if (mVoiceCapable)
-                            adjustVolumeIndex = false;
                     }
                 } else {
                     // (oldIndex < step) is equivalent to (old UI index == 0)
                     if ((oldIndex < step) && mPrevVolDirection != AudioManager.ADJUST_LOWER) {
                         ringerMode = RINGER_MODE_SILENT;
-                        if (mVoiceCapable)
-                            adjustVolumeIndex = false;
                     }
                 }
             }
@@ -2867,10 +2690,9 @@ public class AudioService extends IAudioService.Stub {
                  (1 << AudioSystem.STREAM_SYSTEM)|(1 << AudioSystem.STREAM_SYSTEM_ENFORCED)),
                  UserHandle.USER_CURRENT);
 
-        // ringtone, system and dtmf streams are always affected by ringer mode
+        // ringtone and system streams are always affected by ringer mode
         ringerModeAffectedStreams |= (1 << AudioSystem.STREAM_RING)|
-                                        (1 << AudioSystem.STREAM_SYSTEM)|
-                                        (1 << AudioSystem.STREAM_DTMF);
+                                        (1 << AudioSystem.STREAM_SYSTEM);
 
         if (mVoiceCapable) {
             ringerModeAffectedStreams &= ~(1 << AudioSystem.STREAM_MUSIC);
@@ -2971,14 +2793,14 @@ public class AudioService extends IAudioService.Stub {
                             Log.v(TAG, "getActiveStreamType: Forcing STREAM_REMOTE_MUSIC");
                         return STREAM_REMOTE_MUSIC;
                     } else {
-                        if (mVolumeKeysControlRingStream) {
-                            if (DEBUG_VOL)
-                                Log.v(TAG, "getActiveStreamType: Forcing STREAM_RING b/c default");
-                            return AudioSystem.STREAM_RING;
-                        } else {
+                        if (mVolumeKeysControlMediaStream) {
                             if (DEBUG_VOL)
                                 Log.v(TAG, "getActiveStreamType: Forcing STREAM_MUSIC b/c default setting");
                             return AudioSystem.STREAM_MUSIC;
+                        } else {
+                            if (DEBUG_VOL)
+                                Log.v(TAG, "getActiveStreamType: Forcing STREAM_RING b/c default");
+                             return AudioSystem.STREAM_RING;
                         }
                 }
             } else if (isAfMusicActiveRecently(0)) {
@@ -3650,7 +3472,8 @@ public class AudioService extends IAudioService.Stub {
                         continue;
                     }
                     if (poolId[SOUND_EFFECT_FILES_MAP[effect][0]] == -1) {
-                        String filePath = mActiveSoundEffectsPath
+                        String filePath = Environment.getRootDirectory()
+                                + SOUND_EFFECTS_PATH
                                 + SOUND_EFFECT_FILES.get(SOUND_EFFECT_FILES_MAP[effect][0]);
                         int sampleId = mSoundPool.load(filePath, 0);
                         if (sampleId <= 0) {
@@ -3757,7 +3580,7 @@ public class AudioService extends IAudioService.Stub {
                 } else {
                     MediaPlayer mediaPlayer = new MediaPlayer();
                     try {
-                        String filePath = mActiveSoundEffectsPath +
+                        String filePath = Environment.getRootDirectory() + SOUND_EFFECTS_PATH +
                                     SOUND_EFFECT_FILES.get(SOUND_EFFECT_FILES_MAP[effectType][0]);
                         mediaPlayer.setDataSource(filePath);
                         mediaPlayer.setAudioStreamType(AudioSystem.STREAM_SYSTEM);
@@ -4026,13 +3849,13 @@ public class AudioService extends IAudioService.Stub {
             mContentResolver.registerContentObserver(Settings.Global.getUriFor(
                 Settings.Global.DOCK_AUDIO_MEDIA_ENABLED), false, this);
             mContentResolver.registerContentObserver(Settings.System.getUriFor(
-                Settings.System.VOLUME_LINK_NOTIFICATION), false, this);
+                Settings.System.SAFE_HEADSET_VOLUME), false, this,
+                UserHandle.USER_ALL);
             mContentResolver.registerContentObserver(Settings.System.getUriFor(
-                Settings.System.SAFE_HEADSET_VOLUME), false, this);
+                Settings.System.VOLUME_LINK_NOTIFICATION), false, this,
+                UserHandle.USER_ALL);
             mContentResolver.registerContentObserver(Settings.System.getUriFor(
-                Settings.System.VOLUME_KEYS_CONTROL_RING_STREAM), false, this);
-            mContentResolver.registerContentObserver(Settings.System.getUriFor(
-                Settings.System.CUSTOM_SOUND_EFFECTS_PATH), false, this);
+                Settings.System.VOLUME_KEYS_CONTROL_MEDIA_STREAM), false, this);
         }
 
         @Override
@@ -4046,52 +3869,40 @@ public class AudioService extends IAudioService.Stub {
             //       and mRingerModeAffectedStreams, so will leave this synchronized for now.
             //       mRingerModeMutedStreams and mMuteAffectedStreams are safe (only accessed once).
             synchronized (mSettingsLock) {
-                if (uri.equals(Settings.System.getUriFor(Settings.System.MODE_RINGER_STREAMS_AFFECTED))) {
-                    int ringerModeAffectedStreams = Settings.System.getIntForUser(mContentResolver,
-                           Settings.System.MODE_RINGER_STREAMS_AFFECTED,
-                           ((1 << AudioSystem.STREAM_RING)|(1 << AudioSystem.STREAM_NOTIFICATION)|
-                           (1 << AudioSystem.STREAM_SYSTEM)|(1 << AudioSystem.STREAM_SYSTEM_ENFORCED)),
-                           UserHandle.USER_CURRENT);
-                    if (mVoiceCapable) {
-                        ringerModeAffectedStreams &= ~(1 << AudioSystem.STREAM_MUSIC);
-                    } else {
-                        ringerModeAffectedStreams |= (1 << AudioSystem.STREAM_MUSIC);
-                    }
-                    synchronized (mCameraSoundForced) {
-                        if (mCameraSoundForced) {
-                            ringerModeAffectedStreams &= ~(1 << AudioSystem.STREAM_SYSTEM_ENFORCED);
-                        } else {
-                            ringerModeAffectedStreams |= (1 << AudioSystem.STREAM_SYSTEM_ENFORCED);
-                        }
-                    }
-                    if (ringerModeAffectedStreams != mRingerModeAffectedStreams) {
+                if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.SAFE_HEADSET_VOLUME))) {
+                    mSafeVolumeEnabled = safeVolumeEnabled(mContentResolver);
+                } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.VOLUME_KEYS_CONTROL_MEDIA_STREAM))) {
+                    mVolumeKeysControlMediaStream = Settings.System.getIntForUser(mContentResolver,
+                            Settings.System.VOLUME_KEYS_CONTROL_MEDIA_STREAM, 0,
+                            UserHandle.USER_CURRENT) == 1;
+                } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.MODE_RINGER_STREAMS_AFFECTED))) {
+                    if (updateRingerModeAffectedStreams()) {
                         /*
                          * Ensure all stream types that should be affected by ringer mode
                          * are in the proper state.
                          */
-                        mRingerModeAffectedStreams = ringerModeAffectedStreams;
                         setRingerModeInt(getRingerMode(), false);
                     }
-
-                } else if (uri.equals(Settings.Global.getUriFor(Settings.Global.DOCK_AUDIO_MEDIA_ENABLED))) {
+                } else if (uri.equals(Settings.Global.getUriFor(
+                    Settings.Global.DOCK_AUDIO_MEDIA_ENABLED))) {
                     readDockAudioSettings(mContentResolver);
 
-                } else if (uri.equals(Settings.System.getUriFor(Settings.System.VOLUME_LINK_NOTIFICATION))) {
-                    mLinkNotificationWithVolume = Settings.System.getInt(mContentResolver,
-                            Settings.System.VOLUME_LINK_NOTIFICATION, 1) == 1;
+                } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.VOLUME_LINK_NOTIFICATION))) {
+                    mLinkNotificationWithVolume = Settings.System.getIntForUser(mContentResolver,
+                        Settings.System.VOLUME_LINK_NOTIFICATION, 1,
+                        UserHandle.USER_CURRENT) == 1;
                     if (mLinkNotificationWithVolume) {
-                        mStreamVolumeAlias[AudioSystem.STREAM_NOTIFICATION] = AudioSystem.STREAM_RING;
+                        mStreamVolumeAlias[AudioSystem.STREAM_NOTIFICATION] =
+                            AudioSystem.STREAM_RING;
                     } else {
-                        mStreamVolumeAlias[AudioSystem.STREAM_NOTIFICATION] = AudioSystem.STREAM_NOTIFICATION;
+                        mStreamVolumeAlias[AudioSystem.STREAM_NOTIFICATION] =
+                            AudioSystem.STREAM_NOTIFICATION;
                     }
-
-                } else if (uri.equals(Settings.System.getUriFor(Settings.System.SAFE_HEADSET_VOLUME))) {
-                    mSafeVolumeEnabled = safeVolumeEnabled(mContentResolver);
-                } else if (uri.equals(Settings.System.getUriFor(Settings.System.VOLUME_KEYS_CONTROL_RING_STREAM))) {
-                    mVolumeKeysControlRingStream = Settings.System.getIntForUser(mContentResolver,
-                            Settings.System.VOLUME_KEYS_CONTROL_RING_STREAM, 1, UserHandle.USER_CURRENT) == 1;
                 }
-                reloadTouchSoundAssets();
             }
         }
     }
@@ -4386,10 +4197,10 @@ public class AudioService extends IAudioService.Stub {
                 int config;
                 switch (dockState) {
                     case Intent.EXTRA_DOCK_STATE_DESK:
-                        config = mForceAnalogDeskDock ? AudioSystem.FORCE_ANALOG_DOCK : AudioSystem.FORCE_BT_DESK_DOCK;
+                        config = AudioSystem.FORCE_BT_DESK_DOCK;
                         break;
                     case Intent.EXTRA_DOCK_STATE_CAR:
-                        config = mForceAnalogCarDock ? AudioSystem.FORCE_ANALOG_DOCK : AudioSystem.FORCE_BT_CAR_DOCK;
+                        config = AudioSystem.FORCE_BT_CAR_DOCK;
                         break;
                     case Intent.EXTRA_DOCK_STATE_LE_DESK:
                         config = AudioSystem.FORCE_ANALOG_DOCK;
@@ -4456,19 +4267,13 @@ public class AudioService extends IAudioService.Stub {
                     adjustCurrentStreamVolume();
                     // TODO: Cap volume at safe levels
 
-                    boolean launchPlayer = Settings.System.getIntForUser(
-                            context.getContentResolver(),
-                            Settings.System.HEADSET_CONNECT_PLAYER,
-                            0, UserHandle.USER_CURRENT) != 0;
-                    if (launchPlayer) {
-                        Intent playerIntent = new Intent(Intent.ACTION_MAIN);
-                        playerIntent.addCategory(Intent.CATEGORY_APP_MUSIC);
-                        playerIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                        try {
-                            context.startActivity(playerIntent);
-                        } catch (ActivityNotFoundException e) {
-                            Log.w(TAG, "No music player found to start after headset connection");
-                        }
+                    Intent playerIntent = new Intent(Intent.ACTION_MAIN);
+                    playerIntent.addCategory(Intent.CATEGORY_APP_MUSIC);
+                    playerIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    try {
+                        context.startActivity(playerIntent);
+                    } catch (ActivityNotFoundException e) {
+                        Log.w(TAG, "No music player found to start after headset connection");
                     }
                 } else {
                     // Headset disconnected
@@ -4571,7 +4376,7 @@ public class AudioService extends IAudioService.Stub {
                 AudioSystem.setParameters("screen_state=off");
             } else if (action.equals(Intent.ACTION_CONFIGURATION_CHANGED)) {
                 handleConfigurationChanged(context);
-            } else if (action.equals(Intent.ACTION_USER_BACKGROUND)) {
+            } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
                 // attempt to stop music playback for background user
                 sendMsg(mAudioHandler,
                         MSG_BROADCAST_AUDIO_BECOMING_NOISY,
@@ -4580,7 +4385,6 @@ public class AudioService extends IAudioService.Stub {
                         0,
                         null,
                         0);
-            } else if (action.equals(Intent.ACTION_USER_SWITCHED)) {
                 // the current audio focus owner is no longer valid
                 mMediaFocusControl.discardAudioFocusOwner();
 
@@ -4609,44 +4413,7 @@ public class AudioService extends IAudioService.Stub {
                 }
             }
         }
-    }
 
-    private void masterVolumeChanged(final int flags) {
-        if (mUiContext != null && mVolumePanel != null) {
-            mVolumePanel.postMasterVolumeChanged(flags);
-        } else {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mUiContext == null) {
-                        mUiContext = ThemeUtils.createUiContext(mContext);
-                    }
-
-                    final Context context = mUiContext != null ? mUiContext : mContext;
-                    mVolumePanel = new VolumePanel(context, AudioService.this);
-                    mVolumePanel.postMasterVolumeChanged(flags);
-                }
-            });
-        }
-    }
-
-    private void masterMuteChanged(final int flags) {
-        if (mUiContext != null && mVolumePanel != null) {
-            mVolumePanel.postMasterMuteChanged(flags);
-        } else {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mUiContext == null) {
-                        mUiContext = ThemeUtils.createUiContext(mContext);
-                    }
-
-                    final Context context = mUiContext != null ? mUiContext : mContext;
-                    mVolumePanel = new VolumePanel(context, AudioService.this);
-                    mVolumePanel.postMasterMuteChanged(flags);
-                }
-            });
-        }
     }
 
     private void showVolumeChangeUi(final int streamType, final int flags) {
@@ -4663,25 +4430,6 @@ public class AudioService extends IAudioService.Stub {
                     final Context context = mUiContext != null ? mUiContext : mContext;
                     mVolumePanel = new VolumePanel(context, AudioService.this);
                     mVolumePanel.postVolumeChanged(streamType, flags);
-                }
-            });
-        }
-    }
-
-    private void displaySafeVolumeWarning() {
-        if (mUiContext != null && mVolumePanel != null) {
-            mVolumePanel.postDisplaySafeVolumeWarning(0);
-        } else {
-            mHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (mUiContext == null) {
-                        mUiContext = ThemeUtils.createUiContext(mContext);
-                    }
-
-                    final Context context = mUiContext != null ? mUiContext : mContext;
-                    mVolumePanel = new VolumePanel(context, AudioService.this);
-                    mVolumePanel.postDisplaySafeVolumeWarning(0);
                 }
             });
         }
@@ -4995,7 +4743,8 @@ public class AudioService extends IAudioService.Stub {
 
     private void setSafeMediaVolumeEnabled(boolean on) {
         synchronized (mSafeMediaVolumeState) {
-            if ((mSafeMediaVolumeState != SAFE_MEDIA_VOLUME_NOT_CONFIGURED) &&
+            if (mSafeVolumeEnabled &&
+                    (mSafeMediaVolumeState != SAFE_MEDIA_VOLUME_NOT_CONFIGURED) &&
                     (mSafeMediaVolumeState != SAFE_MEDIA_VOLUME_DISABLED)) {
                 if (on && (mSafeMediaVolumeState == SAFE_MEDIA_VOLUME_INACTIVE)) {
                     mSafeMediaVolumeState = SAFE_MEDIA_VOLUME_ACTIVE;
@@ -5047,7 +4796,6 @@ public class AudioService extends IAudioService.Stub {
                     (mStreamVolumeAlias[streamType] == AudioSystem.STREAM_MUSIC) &&
                     ((device & mSafeMediaVolumeDevices) != 0) &&
                     (index > mSafeMediaVolumeIndex)) {
-                displaySafeVolumeWarning();
                 return false;
             }
             return true;

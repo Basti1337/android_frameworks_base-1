@@ -33,6 +33,7 @@ public class Torch extends Activity  {
     @Override
     public void onResume() {
         super.onResume();
+
         int value = getIntent().getIntExtra("value", 2);
         Intent intent = new Intent();
         switch (value) {

@@ -78,12 +78,11 @@ public class UsbService extends IUsbManager.Stub {
         }
         if (new File("/sys/class/android_usb").exists()) {
             mDeviceManager = new UsbDeviceManager(context);
-        }
-        else if(new File(Resources.getSystem().getString(com.android.internal.R.string.config_legacyUmsLunFile)).exists())
+        } else if (new File(Resources.getSystem()
+                .getString(com.android.internal.R.string.config_legacyUmsLunFile)).exists())
             mDeviceManager = new LegacyUsbDeviceManager(context);
 
         setCurrentUser(UserHandle.USER_OWNER);
-
         final IntentFilter userFilter = new IntentFilter();
         userFilter.addAction(Intent.ACTION_USER_SWITCHED);
         userFilter.addAction(Intent.ACTION_USER_STOPPED);

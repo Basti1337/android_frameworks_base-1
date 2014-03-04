@@ -240,9 +240,7 @@ public class KeyButtonView extends ImageView {
 
             // also invalidate our immediate parent to help avoid situations where nearby glows
             // interfere
-            if ((View)getParent() != null) {
-                ((View)getParent()).invalidate();
-            }
+            ((View)getParent()).invalidate();
         }
     }
 
@@ -288,11 +286,9 @@ public class KeyButtonView extends ImageView {
             case MotionEvent.ACTION_DOWN:
                 mIsLongpressed = false;
                 setPressed(true);
-                if (!sPreloadedRecentApps
-                        && (mClickAction != null
-                                && mClickAction.equals(ButtonsConstants.ACTION_RECENTS)
+                if (mClickAction != null && mClickAction.equals(ButtonsConstants.ACTION_RECENTS)
                             || mLongpressAction != null
-                                    && mLongpressAction.equals(ButtonsConstants.ACTION_RECENTS))) {
+                                    && mLongpressAction.equals(ButtonsConstants.ACTION_RECENTS)) {
                     preloadRecentApps();
                 }
                 if (mSupportsLongpress) {
@@ -397,5 +393,4 @@ public class KeyButtonView extends ImageView {
         }
         return mStatusBarService;
     }
-
 }

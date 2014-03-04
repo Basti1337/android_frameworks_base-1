@@ -1690,15 +1690,20 @@ public final class ActivityManagerService extends ActivityManagerNative
 
                 try {
                     Context context = mContext.createPackageContext(process.info.packageName, 0);
-                    String text = mContext.getString(R.string.privacy_guard_notification_detail,
+
+                    String text = mContext.getString(
+                            msg.arg1 == AppOpsManager.PRIVACY_GUARD_ENABLED ?
+                            R.string.privacy_guard_notification_detail
+                            : R.string.privacy_guard_custom_notification_detail,
                             context.getApplicationInfo().loadLabel(context.getPackageManager()));
+
                     String title = mContext.getString(R.string.privacy_guard_notification);
 
-                    Intent infoIntent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Intent infoIntent = new Intent(Settings.ACTION_APP_OPS_DETAILS_SETTINGS,
                             Uri.fromParts("package", root.packageName, null));
 
                     Notification notification = new Notification();
-                    notification.icon = com.android.internal.R.drawable.stat_notify_privacy_guard;
+                    notification.icon = AppOpsManager.getPrivacyGuardIconResId(msg.arg1);
                     notification.when = 0;
                     notification.flags = Notification.FLAG_ONGOING_EVENT;
                     notification.priority = Notification.PRIORITY_LOW;
@@ -3976,6 +3981,7 @@ public final class ActivityManagerService extends ActivityManagerNative
             final File tracesFile = new File(tracesPath);
             final File tracesDir = tracesFile.getParentFile();
             final File tracesTmp = new File(tracesDir, "__tmp__");
+            FileOutputStream fos = null;
             try {
                 if (!tracesDir.exists()) {
                     tracesFile.mkdirs();
@@ -3997,16 +4003,23 @@ public final class ActivityManagerService extends ActivityManagerNative
                 TimeUtils.formatDuration(SystemClock.uptimeMillis()-startTime, sb);
                 sb.append(" since ");
                 sb.append(msg);
-                FileOutputStream fos = new FileOutputStream(tracesFile);
+                fos = new FileOutputStream(tracesFile);
                 fos.write(sb.toString().getBytes());
                 if (app == null) {
                     fos.write("\n*** No application process!".getBytes());
                 }
-                fos.close();
-                FileUtils.setPermissions(tracesFile.getPath(), 0666, -1, -1); // -rw-rw-rw-
             } catch (IOException e) {
                 Slog.w(TAG, "Unable to prepare slow app traces file: " + tracesPath, e);
                 return;
+            } finally {
+                try {
+                    if (fos != null) {
+                        fos.close();
+                    }
+                    FileUtils.setPermissions(tracesFile.getPath(), 0666, -1, -1); // -rw-rw-rw-
+                } catch (IOException ignored) {
+                    // let it go
+                }
             }
 
             if (app != null) {
@@ -4181,23 +4194,6 @@ public final class ActivityManagerService extends ActivityManagerNative
                     activity != null ? activity.shortComponentName : null,
                     annotation != null ? "ANR " + annotation : "ANR",
                     info.toString());
-
-            String tracesPath = SystemProperties.get("dalvik.vm.stack-trace-file", null);
-            if (tracesPath != null && tracesPath.length() != 0) {
-                File traceRenameFile = new File(tracesPath);
-                String newTracesPath;
-                int lpos = tracesPath.lastIndexOf (".");
-                if (-1 != lpos)
-                    newTracesPath = tracesPath.substring (0, lpos) + "_" + app.processName + tracesPath.substring (lpos);
-                else
-                    newTracesPath = tracesPath + "_" + app.processName;
-                traceRenameFile.renameTo(new File(newTracesPath));
-
-                Process.sendSignal(app.pid, 6);
-                SystemClock.sleep(1000);
-                Process.sendSignal(app.pid, 6);
-                SystemClock.sleep(1000);
-            }
 
             // Bring up the infamous App Not Responding dialog
             Message msg = Message.obtain();
@@ -5290,7 +5286,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                                 },
                                 0, null, null,
                                 android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
-                                AppOpsManager.OP_BOOT_COMPLETED, true, false, MY_PID, Process.SYSTEM_UID,
+                                AppOpsManager.OP_NONE, true, false, MY_PID, Process.SYSTEM_UID,
                                 userId);
                     }
                 }
@@ -13234,8 +13230,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                         + " was previously registered for user " + rl.userId);
             }
             BroadcastFilter bf = new BroadcastFilter(filter, rl, callerPackage,
-                    permission, callingUid, userId,
-                    (callerApp != null && callerApp.info != null && (callerApp.info.flags & ApplicationInfo.FLAG_SYSTEM) != 0));
+                    permission, callingUid, userId);
             rl.add(bf);
             if (!bf.debugCheck()) {
                 Slog.w(TAG, "==> For Dynamic broadast");
@@ -14279,37 +14274,12 @@ public final class ActivityManagerService extends ActivityManagerNative
             starting = mainStack.topRunningActivityLocked(null);
         }
 
-	if (starting != null) {
-	    kept = mainStack.ensureActivityConfigurationLocked(starting, changes);
-	    // And we need to make sure at this point that all other activities
-	    // are made visible with the correct configuration.
-	    mStackSupervisor.ensureActivitiesVisibleLocked(starting, changes);
-	    
-	    /*
-	    int mHaloEnabled = (Settings.System.getInt(mContext.getContentResolver(), Settings.System.HALO_ENABLED, 0));
-
-	    if(mHaloEnabled != 1){
-		    if (mWindowManager.isTaskSplitView(starting.task.taskId)) {
-			Log.e("XPLOD", "Split view restoring task " + starting.task.taskId + " -- " + mIgnoreSplitViewUpdate.size());
-			ActivityRecord second = mainStack.topRunningActivityLocked(starting);
-			if (mWindowManager.isTaskSplitView(second.task.taskId)) {
-			    Log.e("XPLOD", "Split view restoring also task " + second.task.taskId);
-			    kept = kept && mainStack.ensureActivityConfigurationLocked(second, changes);
-			    mStackSupervisor.ensureActivitiesVisibleLocked(second, changes);
-			    if (mIgnoreSplitViewUpdate.contains(starting.task.taskId)) {
-				Log.e("XPLOD", "Task "+ starting.task.taskId + " resuming ignored");
-				mIgnoreSplitViewUpdate.removeAll(Collections.singleton((Integer) starting.task.taskId));
-			    } else {
-				moveTaskToFront(second.task.taskId, 0, null);
-				mIgnoreSplitViewUpdate.add(starting.task.taskId);
-				mIgnoreSplitViewUpdate.add(second.task.taskId);
-				mStackSupervisor.resumeTopActivitiesLocked();
-				moveTaskToFront(starting.task.taskId, 0, null);
-			    }
-			}
-		    }
-	    }*/
-	}
+        if (starting != null) {
+            kept = mainStack.ensureActivityConfigurationLocked(starting, changes);
+            // And we need to make sure at this point that all other activities
+            // are made visible with the correct configuration.
+            mStackSupervisor.ensureActivitiesVisibleLocked(starting, changes);
+        }
 
         if (values != null && mWindowManager != null) {
             mWindowManager.setNewConfiguration(mConfiguration);
@@ -16495,7 +16465,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 intent.addFlags(Intent.FLAG_RECEIVER_NO_ABORT);
                 broadcastIntentLocked(null, null, intent,
                         null, null, 0, null, null,
-                        android.Manifest.permission.RECEIVE_BOOT_COMPLETED, AppOpsManager.OP_BOOT_COMPLETED,
+                        android.Manifest.permission.RECEIVE_BOOT_COMPLETED, AppOpsManager.OP_NONE,
                         true, false, MY_PID, Process.SYSTEM_UID, userId);
             }
             int num = mUserLru.size();
@@ -16823,8 +16793,7 @@ public final class ActivityManagerService extends ActivityManagerNative
 
         ActivityRecord starting = getFocusedStack().topRunningActivityLocked(null);
 
-        if (mWindowManager != null && starting != null &&
-                mWindowManager.isTaskSplitView(starting.task.taskId)) {
+        if (mWindowManager != null && starting != null && mWindowManager.isTaskSplitView(starting.task.taskId)) {
             Log.e("XPLOD", "[rAL] The current resumed task " + starting.task.taskId + " is split. Checking second");
 
             // This task was split, we resume the second task if this task wasn't already a resumed task
@@ -16835,7 +16804,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 ActivityRecord second = getFocusedStack().topRunningActivityLocked(starting);
 
                 // Is that second task split as well?
-                if (second != null && mWindowManager.isTaskSplitView(second.task.taskId)) {
+                if (mWindowManager.isTaskSplitView(second.task.taskId)) {
                     // Don't restore me again
                     Log.e("XPLOD", "[rAL] There is a second task that I should be ignoring next: " + second.task.taskId);
                     mSecondTaskToResume = second.task.taskId;

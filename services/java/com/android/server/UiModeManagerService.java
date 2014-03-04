@@ -244,7 +244,6 @@ final class UiModeManagerService extends IUiModeManager.Stub
                 new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
 
         ThemeUtils.registerThemeChangeReceiver(mContext, mThemeChangeReceiver);
-
         mSensorManager = (SensorManager)(context.getSystemService(Context.SENSOR_SERVICE));
 
         mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);

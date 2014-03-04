@@ -23,7 +23,6 @@ import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.os.Handler;
-import android.os.Looper;
 import android.provider.Settings;
 import android.text.TextUtils;
 import android.text.format.DateFormat;
@@ -200,7 +199,6 @@ public class KeyguardStatusView extends GridLayout {
             }
 
             clockView24 = DateFormat.getBestDateTimePattern(locale, clockView24Skel);
-
             cacheKey = key;
         }
     }

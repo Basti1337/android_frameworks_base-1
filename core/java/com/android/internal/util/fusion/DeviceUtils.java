@@ -13,6 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
 package com.android.internal.util.fusion;
 
 import android.bluetooth.BluetoothAdapter;
@@ -28,12 +29,10 @@ import android.util.DisplayMetrics;
 import android.view.DisplayInfo;
 import android.view.WindowManager;
 import android.util.Log;
-
 import com.android.internal.telephony.PhoneConstants;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.io.File;
 
 public class DeviceUtils {
 
@@ -77,7 +76,7 @@ public class DeviceUtils {
 
     public static boolean deviceSupportsImeSwitcher(Context ctx) {
         Resources res = ctx.getResources();
-        return res.getBoolean(com.android.internal.R.bool.config_show_cmIMESwitcher);
+        return res.getBoolean(com.android.internal.R.bool.config_show_IMESwitcher);
     }
 
     public static boolean deviceSupportsVibrator(Context ctx) {
@@ -86,29 +85,7 @@ public class DeviceUtils {
     }
 
     public static boolean deviceSupportsTorch(Context context) {
-        PackageManager pm = context.getPackageManager();
-        try {
-            List<ApplicationInfo> packages = pm.getInstalledApplications(0);
-                for (ApplicationInfo packageInfo : packages) {
-                    if (packageInfo.packageName.equals(TorchConstants.APP_PACKAGE_NAME)) {
-                        return true;
-                    }
-                }
-        } catch (Exception e) {
-        }
-        return false;
-    }
-
-    public static boolean deviceSupportsFastCharge(Context context) {
-        String fchargePath = context.getResources()
-                    .getString(com.android.internal.R.string.config_fastChargePath);
-            if (!fchargePath.isEmpty()) {
-                File fastcharge = new File(fchargePath);
-                if (fastcharge.exists() && fastcharge.canWrite()) {
-                    return true;
-                }
-            }
-        return false;
+        return context.getResources().getBoolean(com.android.internal.R.bool.config_enableTorch);
     }
 
     public static FilteredDeviceFeaturesArray filterUnsupportedDeviceFeatures(Context context,
@@ -178,5 +155,4 @@ public class DeviceUtils {
     public static boolean isTablet(Context con) {
         return getScreenType(con) == DEVICE_TABLET;
     }
-
 }

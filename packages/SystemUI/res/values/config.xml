@@ -38,7 +38,7 @@
     <string name="config_statusBarComponent" translatable="false">com.android.systemui.statusbar.phone.PhoneStatusBar</string>
 
     <!-- Whether or not we show the number in the bar. -->
-    <bool name="config_statusBarShowNumber">false</bool>
+    <bool name="config_statusBarShowNumber">true</bool>
 
     <!-- How many icons may be shown at once in the system bar. Includes any
          slots that may be reused for things like IME control. -->
@@ -110,6 +110,14 @@
 
     <!-- milliseconds before the heads up notification accepts touches. -->
     <integer name="heads_up_sensitivity_delay">700</integer>
+
+    <!-- Sensivity of pie gestures controlls.
+        Must be minimum 1 and maximum 10 (See @EdgeServiceConstants.java).
+        Default for pie is high sensivity -->
+    <integer name="pie_gesture_sensivity">8</integer>
+
+    <!-- Default value how much apps show the app screenshot on recents view entry -->
+    <integer name="expanded_items_default">2</integer>
 
 </resources>
 

@@ -1128,6 +1128,7 @@ public abstract class WallpaperService extends Service {
            }
            mActiveEngines.clear();
         }
+        mActiveEngines.clear();
     }
 
     /**

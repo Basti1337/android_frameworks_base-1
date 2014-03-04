@@ -181,6 +181,9 @@
     <!-- Default for Settings.Global.WIFI_SCAN_ALWAYS_AVAILABLE -->
     <integer name="def_wifi_scan_always_available">0</integer>
 
+    <!-- Default for Settings.Global.TETHER_DUN_REQUIRED -->
+    <integer name="def_tether_dun_required">0</integer>
+
     <!-- Default for Settings.Global.WIFI_SUSPEND_OPTIMIZATIONS_ENABLED -->
     <integer name="def_wifi_suspend_optimizations_enabled">1</integer>
 
@@ -195,4 +198,5 @@
     1. Right
     2. Left -->
     <integer name="def_qs_quick_pulldown">0</integer>
+
 </resources>

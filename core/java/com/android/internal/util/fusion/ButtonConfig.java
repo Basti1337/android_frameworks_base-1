@@ -77,5 +77,4 @@ public class ButtonConfig {
     public void setIcon(String iconUri) {
         mIconUri = iconUri;
     }
-
 }

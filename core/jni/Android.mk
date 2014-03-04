@@ -7,10 +7,7 @@ LOCAL_CFLAGS += -U__APPLE__
 LOCAL_CFLAGS += -Wno-unused-parameter -Wno-int-to-pointer-cast
 LOCAL_CFLAGS += -Wno-maybe-uninitialized -Wno-parentheses
 LOCAL_CPPFLAGS += -Wno-conversion-null
-LOCAL_CFLAGS += -fstrict-aliasing
-LOCAL_CFLAGS += -Wno-unused-parameter -Wno-int-to-pointer-cast
-LOCAL_CFLAGS += -Wno-maybe-uninitialized -Wno-parentheses
-LOCAL_CPPFLAGS += -Wno-conversion-null
+LOCAL_CFLAGS += -fno-strict-aliasing
 
 ifeq ($(TARGET_ARCH), arm)
 	LOCAL_CFLAGS += -DPACKED="__attribute__ ((packed))"
@@ -234,19 +231,10 @@ $(shell mkdir -p $(OUT)/obj/SHARED_LIBRARIES/libtime_genoff_intermediates/)
 $(shell touch $(OUT)/obj/SHARED_LIBRARIES/libtime_genoff_intermediates/export_includes)
 endif
 
-ifeq ($(TARGET_ARCH), arm)
-  ifeq ($(ARCH_ARM_HAVE_NEON),true)
-    TARGET_arm_CFLAGS += -DUSE_NEON_BITMAP_OPTS -mvectorize-with-neon-quad
-    LOCAL_SRC_FILES+= \
-		android/graphics/Bitmap.cpp.arm
-  else
-    LOCAL_SRC_FILES+= \
-		android/graphics/Bitmap.cpp
-  endif
-else
-    LOCAL_SRC_FILES+= \
-		android/graphics/Bitmap.cpp
-endif
+# enable for all devices
+TARGET_arm_CFLAGS += -DUSE_NEON_BITMAP_OPTS -mvectorize-with-neon-quad
+LOCAL_SRC_FILES+= \
+    android/graphics/Bitmap.cpp.arm
 
 ifeq ($(USE_OPENGL_RENDERER),true)
 	LOCAL_SHARED_LIBRARIES += libhwui

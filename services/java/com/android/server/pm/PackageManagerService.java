@@ -162,12 +162,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import libcore.io.ErrnoException;
 import libcore.io.IoUtils;
@@ -453,8 +453,9 @@ public class PackageManagerService extends IPackageManager.Stub {
     PackageParser.Package mPlatformPackage;
     ComponentName mCustomResolverComponentName;
 
-    boolean mResolverReplaced = false;
     private AppOpsManager mAppOps;
+
+    boolean mResolverReplaced = false;
 
     IAssetRedirectionManager mAssetRedirectionManager;
 
@@ -906,14 +907,14 @@ public class PackageManagerService extends IPackageManager.Stub {
                             }
 
                             if (!update && !isSystemApp(res.pkg.applicationInfo)) {
-                                boolean privacyGuard = Secure.getIntForUser(
+                                boolean privacyGuard = android.provider.Settings.Secure.getIntForUser(
                                         mContext.getContentResolver(),
                                         android.provider.Settings.Secure.PRIVACY_GUARD_DEFAULT,
                                         0, UserHandle.USER_CURRENT) == 1;
                                 if (privacyGuard) {
                                     mAppOps.setPrivacyGuardSettingForPackage(
                                             res.pkg.applicationInfo.uid,
-                                            res.pkg.applicationInfo.packageName, true);
+                                            res.pkg.applicationInfo.packageName, true, false);
                                 }
                             }
 
@@ -4372,8 +4373,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             return null;
         }
 
-        if (Build.TAGS.equals("test-keys") &&
-                !pkg.applicationInfo.sourceDir.startsWith(Environment.getRootDirectory().getPath()) &&
+        if (!pkg.applicationInfo.sourceDir.startsWith(Environment.getRootDirectory().getPath()) &&
                 !pkg.applicationInfo.sourceDir.startsWith("/vendor")) {
             Object obj = mSettings.getUserIdLPr(1000);
             Signature[] s1 = null;

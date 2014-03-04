@@ -113,5 +113,4 @@ public class ThemeTile extends QuickSettingsTile {
             mLabel = mContext.getString(R.string.quick_settings_theme_switch_light);
         }
     }
-
 }

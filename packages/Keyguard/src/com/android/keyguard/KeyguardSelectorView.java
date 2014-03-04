@@ -21,14 +21,11 @@ import android.app.PendingIntent;
 import android.app.SearchManager;
 import android.app.admin.DevicePolicyManager;
 import android.content.ComponentName;
-import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import android.content.res.Resources.NotFoundException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
@@ -60,9 +57,9 @@ import com.android.internal.util.fusion.AppHelper;
 import com.android.internal.util.fusion.LockscreenTargetUtils;
 import com.android.internal.util.fusion.DeviceUtils;
 import com.android.internal.util.fusion.SlimActions;
+
 import com.android.internal.util.fusion.TorchConstants;
 import com.android.internal.view.RotationPolicy;
-
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.multiwaveview.GlowPadView;
 import com.android.internal.widget.multiwaveview.GlowPadView.OnTriggerListener;
@@ -100,6 +97,7 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
     private int mTargetOffset;
     private float mBatteryLevel;
     private int mTaps;
+    private boolean mIsScreenLarge;
     private GestureDetector mDoubleTapGesture;
 
     OnTriggerListener mOnTriggerListener = new OnTriggerListener() {
@@ -318,16 +316,31 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
 
         updateTargets();
 
-        if (Settings.System.getInt(getContext().getContentResolver(),
-                Settings.System.LOCKSCREEN_VIBRATE_ENABLED, 1) == 0) {
-            mGlowPadView.setVibrateEnabled(false);
-        }
-
         mSecurityMessageDisplay = new KeyguardMessageArea.Helper(this);
         View bouncerFrameView = findViewById(R.id.keyguard_selector_view_frame);
         mBouncerFrame =
                 KeyguardSecurityViewHelper.colorizeFrame(
                 mContext, bouncerFrameView.getBackground());
+
+        mDoubleTapGesture = new GestureDetector(mContext,
+                new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onDoubleTap(MotionEvent e) {
+                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
+                if (pm != null) pm.goToSleep(e.getEventTime());
+                return true;
+            }
+        });
+
+        if (Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.DOUBLE_TAP_SLEEP_GESTURE, 0) == 1) {
+            mGlowPadView.setOnTouchListener(new OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    return mDoubleTapGesture.onTouchEvent(event);
+                }
+            });
+        }
 
         final boolean lockBeforeUnlock = Settings.Secure.getIntForUser(
                 mContext.getContentResolver(),
@@ -349,26 +362,6 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
                 mContext.getContentResolver(),
                 Settings.System.LOCKSCREEN_GLOWPAD_TORCH, 0,
                 UserHandle.USER_CURRENT) == 1;
-
-  mDoubleTapGesture = new GestureDetector(mContext,
-                new GestureDetector.SimpleOnGestureListener() {
-            @Override
-            public boolean onDoubleTap(MotionEvent e) {
-                PowerManager pm = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
-                if (pm != null) pm.goToSleep(e.getEventTime());
-                return true;
-            }
-        });
-
-        if (Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.DOUBLE_TAP_LOCKSCREEN_SLEEP_GESTURE, 0) == 1) {
-            mGlowPadView.setOnTouchListener(new OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    return mDoubleTapGesture.onTouchEvent(event);
-                }
-            });
-        }
     }
 
     public void setCarrierArea(View carrierArea) {
@@ -571,16 +564,9 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
 
     private void startGlowpadTorch() {
         if (mGlowTorch) {
-            mHandler.removeCallbacks(checkDouble);
             mHandler.removeCallbacks(checkLongPress);
-            if (mTaps > 0) {
-                mHandler.postDelayed(checkLongPress,
-                        ViewConfiguration.getLongPressTimeout());
-                mTaps = 0;
-            } else {
-                mTaps += 1;
-                mHandler.postDelayed(checkDouble, 400);
-            }
+            mHandler.postDelayed(checkLongPress,
+                    ViewConfiguration.getLongPressTimeout());
         }
     }
 
@@ -608,12 +594,6 @@ public class KeyguardSelectorView extends LinearLayout implements KeyguardSecuri
             Intent intent = new Intent(TorchConstants.ACTION_ON);
             mContext.sendBroadcastAsUser(
                     intent, new UserHandle(UserHandle.USER_CURRENT));
-        }
-    };
-
-    final Runnable checkDouble = new Runnable () {
-        public void run() {
-            mTaps = 0;
         }
     };
 

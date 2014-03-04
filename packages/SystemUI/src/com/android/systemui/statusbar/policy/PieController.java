@@ -886,5 +886,4 @@ public class PieController implements BaseStatusBar.NavigationBarCallback, PieVi
         }
         return mContext.getString(R.string.pie_battery_status_discharging, mBatteryLevel);
     }
-
 }

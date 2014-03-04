@@ -62,6 +62,7 @@ import com.android.internal.util.fusion.ButtonsConstants;
 import com.android.internal.util.fusion.ButtonsHelper;
 import com.android.internal.util.fusion.ImageHelper;
 import com.android.internal.util.fusion.DeviceUtils;
+
 import com.android.systemui.R;
 import com.android.systemui.statusbar.BaseStatusBar;
 import com.android.systemui.statusbar.DelegateViewHelper;
@@ -112,10 +113,9 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     int mNavigationIconHints = 0;
 
     private Drawable mBackIcon, mBackAltIcon;
+    private Drawable mRecentAltIcon, mRecentAltLandIcon;
 
     boolean mWasNotifsButtonVisible = false;
-
-    private Drawable mRecentAltIcon, mRecentAltLandIcon;
 
     protected DelegateViewHelper mDelegateHelper;
     private DeadZone mDeadZone;
@@ -267,8 +267,6 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
         mShowMenu = false;
         mDelegateHelper = new DelegateViewHelper(this);
 
-        getIcons(res);
-
         mBarTransitions = new NavigationBarTransitions(this);
 
         disableCameraByUser();
@@ -366,11 +364,6 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     // shown when keyguard is visible and camera is available
     public View getCameraButton() {
         return mCurrentView.findViewById(R.id.camera_button);
-    }
-
-    private void getIcons(Resources res) {
-        mRecentAltIcon = res.getDrawable(R.drawable.ic_sysbar_recent_clear);
-        mRecentAltLandIcon = res.getDrawable(R.drawable.ic_sysbar_recent_clear_land);
     }
 
     // used for lockscreen notifications
@@ -696,13 +689,14 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
         mHandler.post(new Runnable() {
             public void run() {
                 if (iconId == 1) iv.setImageResource(R.drawable.search_light_land);
-                else iv.setImageDrawable(mVertical ? mRecentAltLandIcon : mRecentAltIcon);
+                //else iv.setImageDrawable(mVertical ? mRecentAltLandIcon : mRecentAltIcon);
                 mWasNotifsButtonVisible = iconId != 0 && ((mDisabledFlags & View.STATUS_BAR_DISABLE_HOME) != 0);
                 setVisibleOrGone(getNotifsButton(), mWasNotifsButtonVisible);
             }
         });
     }
 
+    @Override
     public void setDisabledFlags(int disabledFlags) {
         setDisabledFlags(disabledFlags, false);
     }
@@ -776,8 +770,7 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
                         Settings.System.LOCKSCREEN_NOTIFICATIONS, 1) == 1 &&
                 Settings.System.getInt(mContext.getContentResolver(),
                         Settings.System.LOCKSCREEN_NOTIFICATIONS_PRIVACY_MODE, 0) == 0;
-        setVisibleOrGone(getSearchLight(), showSearch);
-        //setVisibleOrGone(getCameraButton(), showCamera);
+
         setVisibleOrGone(getNotifsButton(), showNotifs && mWasNotifsButtonVisible);
 
         mBarTransitions.applyBackButtonQuiescentAlpha(mBarTransitions.getMode(), true /*animate*/);
@@ -1049,7 +1042,6 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
     }
     */
 
-
     private String getResourceName(int resId) {
         if (resId != 0) {
             final android.content.res.Resources res = mContext.getResources();
@@ -1111,7 +1103,6 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
 
         // construct the navigationbar
         makeBar();
-
     }
 
     public void setForgroundColor(Drawable drawable) {
@@ -1175,5 +1166,4 @@ public class NavigationBarView extends LinearLayout implements BaseStatusBar.Nav
         }
         pw.println();
     }
-
 }

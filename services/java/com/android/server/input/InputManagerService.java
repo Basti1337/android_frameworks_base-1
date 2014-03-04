@@ -273,7 +273,10 @@ public class InputManagerService extends IInputManager.Stub
 
         registerPointerSpeedSettingObserver();
         registerShowTouchesSettingObserver();
-        registerStylusIconEnabledSettingObserver();
+        if (mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_stylusGestures)) {
+            registerStylusIconEnabledSettingObserver();
+        }
         registerVolumeKeysRotationSettingObserver();
 
         mContext.registerReceiver(new BroadcastReceiver() {
@@ -1207,13 +1210,13 @@ public class InputManagerService extends IInputManager.Stub
 
     public void updateVolumeKeysRotationFromSettings() {
         int mode = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.SWAP_VOLUME_KEYS_ON_ROTATION, 0);
+                Settings.System.SWAP_VOLUME_KEYS_BY_ROTATE, 0);
         nativeSetVolumeKeysRotation(mPtr, mode);
     }
 
     public void registerVolumeKeysRotationSettingObserver() {
         mContext.getContentResolver().registerContentObserver(
-                Settings.System.getUriFor(Settings.System.SWAP_VOLUME_KEYS_ON_ROTATION), false,
+                Settings.System.getUriFor(Settings.System.SWAP_VOLUME_KEYS_BY_ROTATE), false,
                 new ContentObserver(mHandler) {
                     @Override
                     public void onChange(boolean selfChange) {
@@ -1403,17 +1406,6 @@ public class InputManagerService extends IInputManager.Stub
             if (!mInputFilterChain.isEmpty()) {
                 head = mInputFilterChain.get(0);
             }
-        }
-        // call filter input event outside of the lock.
-        // this is safe, because we know that mInputFilter never changes.
-        // we may loose a event, but this does not differ from the original implementation.
-        if (head != null) {
-            try {
-                head.mInputFilter.filterInputEvent(event, policyFlags);
-            } catch (RemoteException e) {
-                /* ignore */
-            }
-            return false;
         }
         // call filter input event outside of the lock.
         // this is safe, because we know that mInputFilter never changes.

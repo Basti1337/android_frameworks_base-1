@@ -329,7 +329,6 @@ public class ResourcesManager {
 
         return changes;
     }
-
     public static IPackageManager getPackageManager() {
         if (sPackageManager != null) {
             //Slog.v("PackageManager", "returning cur default = " + sPackageManager);

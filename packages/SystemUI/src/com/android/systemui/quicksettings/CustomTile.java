@@ -36,10 +36,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.android.internal.util.fusion.AppHelper;
-import com.android.internal.util.fusion.Converter;
-import com.android.internal.util.fusion.ImageHelper;
 import com.android.internal.util.fusion.SlimActions;
-
 import com.android.systemui.R;
 import com.android.systemui.statusbar.phone.QuickSettingsContainerView;
 import com.android.systemui.statusbar.phone.QuickSettingsController;
@@ -189,7 +186,7 @@ public class CustomTile extends QuickSettingsTile {
 
     private String returnFriendlyName(String uri) {
         if (uri != null) {
-            return AppHelper.getShortcutPreferred(
+            return AppHelper.getFriendlyNameForUri(
                     mContext, mContext.getPackageManager(), uri);
         }
         return null;
@@ -225,31 +222,17 @@ public class CustomTile extends QuickSettingsTile {
                 if (mCustomIcon[mState] != null && mCustomIcon[mState].length() > 0) {
                     File f = new File(Uri.parse(mCustomIcon[mState]).getPath());
                     if (f.exists()) {
-                        mRealDrawable = ImageHelper.resize(mContext, new BitmapDrawable(
-                                mContext.getResources(), f.getAbsolutePath()),
-                                Converter.dpToPx(mContext, 60));
+                        mRealDrawable = new BitmapDrawable(
+                                mContext.getResources(), f.getAbsolutePath());
                     }
                 } else {
                     try {
-                        String extraIconPath = "";
                         if (mClickActions[mState] != null) {
-                            extraIconPath =
-                                mClickActions[mState].replaceAll(".*?hasExtraIcon=", "");
                             mRealDrawable = mContext.getPackageManager().getActivityIcon(
                                     Intent.parseUri(mClickActions[mState], 0));
                         } else if (mLongActions[mState] != null) {
-                            extraIconPath =
-                                mLongActions[mState].replaceAll(".*?hasExtraIcon=", "");
                             mRealDrawable = mContext.getPackageManager().getActivityIcon(
                                     Intent.parseUri(mLongActions[mState], 0));
-                        }
-                        if (extraIconPath.length() > 0) {
-                            File f = new File(Uri.parse(extraIconPath).getPath());
-                            if (f.exists()) {
-                                mRealDrawable = ImageHelper.resize(mContext, new BitmapDrawable(
-                                        mContext.getResources(), f.getAbsolutePath()),
-                                        Converter.dpToPx(mContext, 60));
-                            }
                         }
                     } catch (NameNotFoundException e) {
                         mRealDrawable = null;
@@ -451,5 +434,4 @@ public class CustomTile extends QuickSettingsTile {
             updateSettings();
         }
     }
-
 }

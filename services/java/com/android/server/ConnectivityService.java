@@ -32,7 +32,6 @@ import static android.net.NetworkPolicyManager.RULE_ALLOW_ALL;
 import static android.net.NetworkPolicyManager.RULE_REJECT_METERED;
 
 import android.app.AlarmManager;
-import android.app.AppOpsManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -75,7 +74,6 @@ import android.net.RouteInfo;
 import android.net.SamplingDataTracker;
 import android.net.Uri;
 import android.net.wifi.WifiStateTracker;
-import android.net.wimax.WimaxHelper;
 import android.net.wimax.WimaxManagerConstants;
 import android.os.AsyncTask;
 import android.os.Binder;
@@ -758,6 +756,8 @@ public class ConnectivityService extends IConnectivityManager.Stub {
         Class wimaxStateTrackerClass = null;
         Class wimaxServiceClass = null;
         Class wimaxManagerClass;
+        String wimaxJarLocation;
+        String wimaxLibLocation;
         String wimaxManagerClassName;
         String wimaxServiceClassName;
         String wimaxStateTrackerClassName;
@@ -769,6 +769,10 @@ public class ConnectivityService extends IConnectivityManager.Stub {
 
         if (isWimaxEnabled) {
             try {
+                wimaxJarLocation = context.getResources().getString(
+                        com.android.internal.R.string.config_wimaxServiceJarLocation);
+                wimaxLibLocation = context.getResources().getString(
+                        com.android.internal.R.string.config_wimaxNativeLibLocation);
                 wimaxManagerClassName = context.getResources().getString(
                         com.android.internal.R.string.config_wimaxManagerClassname);
                 wimaxServiceClassName = context.getResources().getString(
@@ -776,7 +780,10 @@ public class ConnectivityService extends IConnectivityManager.Stub {
                 wimaxStateTrackerClassName = context.getResources().getString(
                         com.android.internal.R.string.config_wimaxStateTrackerClassname);
 
-                wimaxClassLoader = WimaxHelper.getWimaxClassLoader(context);
+                if (DBG) log("wimaxJarLocation: " + wimaxJarLocation);
+                wimaxClassLoader =  new DexClassLoader(wimaxJarLocation,
+                        new ContextWrapper(context).getCacheDir().getAbsolutePath(),
+                        wimaxLibLocation, ClassLoader.getSystemClassLoader());
 
                 try {
                     wimaxManagerClass = wimaxClassLoader.loadClass(wimaxManagerClassName);
@@ -1821,16 +1828,9 @@ public class ConnectivityService extends IConnectivityManager.Stub {
     /**
      * @see ConnectivityManager#setMobileDataEnabled(boolean)
      */
-    public void setMobileDataEnabled(String callingPackage, boolean enabled) {
+    public void setMobileDataEnabled(boolean enabled) {
         enforceChangePermission();
         if (DBG) log("setMobileDataEnabled(" + enabled + ")");
-
-        AppOpsManager appOps = (AppOpsManager)mContext.getSystemService(Context.APP_OPS_SERVICE);
-        int callingUid = Binder.getCallingUid();
-        if (appOps.noteOp(AppOpsManager.OP_DATA_CONNECT_CHANGE, callingUid, callingPackage) !=
-                AppOpsManager.MODE_ALLOWED) {
-            return;
-        }
 
         mHandler.sendMessage(mHandler.obtainMessage(EVENT_SET_MOBILE_DATA,
                 (enabled ? ENABLED : DISABLED), 0));
@@ -4218,7 +4218,7 @@ public class ConnectivityService extends IConnectivityManager.Stub {
             String server = Settings.Global.getString(mContext.getContentResolver(),
                     Settings.Global.CAPTIVE_PORTAL_SERVER);
             if (server == null) {
-                server = CaptivePortalTracker.DEFAULT_SERVER;
+                server = "clients3.google.com";
             }
             return "http://" + server + "/generate_204";
         }

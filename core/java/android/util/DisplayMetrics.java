@@ -309,7 +309,7 @@ public class DisplayMetrics {
         return SystemProperties.getInt("persist.sys.lcd_density", DENSITY_DEVICE);
     }
 
-    public static int getDeviceDensity() {
+    private static int getDeviceDensity() {
         // qemu.sf.lcd_density can be used to override ro.sf.lcd_density
         // when running in the emulator, allowing for dynamic configurations.
         // The reason for this is that ro.sf.lcd_density is write-once and is

@@ -25,8 +25,6 @@ import android.app.Activity;
 import android.app.ActivityManagerNative;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.app.Profile;
-import android.app.ProfileManager;
 import android.app.SearchManager;
 import android.app.StatusBarManager;
 import android.content.BroadcastReceiver;
@@ -34,7 +32,6 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.database.ContentObserver;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
@@ -58,7 +55,6 @@ import android.view.WindowManager;
 import android.view.WindowManagerPolicy;
 
 import com.android.internal.telephony.IccCardConstants;
-import com.android.internal.util.fusion.QuietHoursHelper;
 import com.android.internal.widget.LockPatternUtils;
 
 /**
@@ -251,10 +247,6 @@ public class KeyguardViewMediator {
     private int mLockSoundId;
     private int mUnlockSoundId;
     private int mLockSoundStreamId;
-
-    private ProfileManager mProfileManager;
-
-    private int mSlideLockDelay;
 
     /**
      * The volume applied to the lock/unlock sounds.
@@ -483,25 +475,6 @@ public class KeyguardViewMediator {
         }
     };
 
-    private class SettingsObserver extends ContentObserver {
-        SettingsObserver(Handler handler) {
-            super(handler);
-        }
-
-        void observe() {
-            ContentResolver cr = mContext.getContentResolver();
-            cr.registerContentObserver(Settings.Global.getUriFor(
-                    Settings.Global.LOCK_SOUND), false, this);
-            cr.registerContentObserver(Settings.Global.getUriFor(
-                    Settings.Global.UNLOCK_SOUND), false, this);
-        }
-
-        @Override
-        public void onChange(boolean selfChange) {
-            reloadSounds();
-        }
-    }
-
     private void userActivity() {
         userActivity(AWAKE_INTERVAL_DEFAULT_MS);
     }
@@ -541,7 +514,6 @@ public class KeyguardViewMediator {
                 && !mLockPatternUtils.isLockScreenDisabled();
 
         WindowManager wm = (WindowManager)context.getSystemService(Context.WINDOW_SERVICE);
-        mProfileManager = (ProfileManager) context.getSystemService(Context.PROFILE_SERVICE);
 
         mKeyguardViewManager = new KeyguardViewManager(context, wm, mViewMediatorCallback,
                 mLockPatternUtils);
@@ -551,27 +523,6 @@ public class KeyguardViewMediator {
         mScreenOn = mPM.isScreenOn();
 
         mLockSounds = new SoundPool(1, AudioManager.STREAM_SYSTEM, 0);
-        reloadSounds();
-        int lockSoundDefaultAttenuation = context.getResources().getInteger(
-                com.android.internal.R.integer.config_lockSoundVolumeDb);
-        mLockSoundVolume = (float)Math.pow(10, (float)lockSoundDefaultAttenuation/20);
-
-        SettingsObserver observer = new SettingsObserver(new Handler());
-        observer.observe();
-    }
-
-    public void reloadSounds() {
-        final ContentResolver cr = mContext.getContentResolver();
-
-        if (mLockSoundId > 0) {
-            mLockSounds.unload(mLockSoundId);
-            mLockSoundId = 0;
-        }
-        if (mUnlockSoundId > 0) {
-            mLockSounds.unload(mUnlockSoundId);
-            mUnlockSoundId = 0;
-        }
-
         String soundPath = Settings.Global.getString(cr, Settings.Global.LOCK_SOUND);
         if (soundPath != null) {
             mLockSoundId = mLockSounds.load(soundPath, 1);
@@ -586,6 +537,9 @@ public class KeyguardViewMediator {
         if (soundPath == null || mUnlockSoundId == 0) {
             Log.w(TAG, "failed to load unlock sound from " + soundPath);
         }
+        int lockSoundDefaultAttenuation = context.getResources().getInteger(
+                com.android.internal.R.integer.config_lockSoundVolumeDb);
+        mLockSoundVolume = (float)Math.pow(10, (float)lockSoundDefaultAttenuation/20);
     }
 
     public void setBackgroundBitmap(Bitmap bmp) {
@@ -639,26 +593,15 @@ public class KeyguardViewMediator {
     public void onScreenTurnedOff(int why) {
         synchronized (this) {
             mScreenOn = false;
-            mSlideLockDelay = why;
             if (DEBUG) Log.d(TAG, "onScreenTurnedOff(" + why + ")");
 
             mKeyguardDonePending = false;
 
-            // Prepare for handling Lock/Slide lock delay and timeout
-            boolean lockImmediately = false;
-            final ContentResolver cr = mContext.getContentResolver();
-            boolean separateSlideLockTimeoutEnabled = Settings.System.getInt(cr,
-                    Settings.System.SCREEN_LOCK_SLIDE_DELAY_TOGGLE, 0) == 1;
-            if (mLockPatternUtils.isSecure()) {
-                // Lock immediately based on setting if secure (user has a pin/pattern/password)
-                // This is retained as-is to ensue AOSP security integrity is maintained
-                lockImmediately = mLockPatternUtils.getPowerButtonInstantlyLocks();
-            } else {
-                // Unless a separate slide lock timeout is enabled, this "locks" the device when
-                // not secure to provide easy access to the camera while preventing unwanted input
-                lockImmediately = separateSlideLockTimeoutEnabled ? false
-                        : mLockPatternUtils.getPowerButtonInstantlyLocks();
-            }
+            // Lock immediately based on setting if secure (user has a pin/pattern/password).
+            // This also "locks" the device when not secure to provide easy access to the
+            // camera while preventing unwanted input.
+            final boolean lockImmediately =
+                mLockPatternUtils.getPowerButtonInstantlyLocks() || !mLockPatternUtils.isSecure();
 
             if (mExitSecureCallback != null) {
                 if (DEBUG) Log.d(TAG, "pending exit secure callback cancelled");
@@ -704,27 +647,6 @@ public class KeyguardViewMediator {
                 Settings.Secure.LOCK_SCREEN_LOCK_AFTER_TIMEOUT,
                 KEYGUARD_LOCK_AFTER_DELAY_DEFAULT);
 
-        // From CyanogenMod specific Settings
-        // If utilizing a secured lock screen, we should not utilize the slide
-        // delay and should let it default to the standard delay
-        boolean separateSlideLockTimeoutEnabled;
-        if (mLockPatternUtils.isSecure()) {
-            separateSlideLockTimeoutEnabled = false;
-        } else {
-            separateSlideLockTimeoutEnabled = Settings.System.getInt(cr,
-                    Settings.System.SCREEN_LOCK_SLIDE_DELAY_TOGGLE, 0) == 1;
-        }
-
-        int slideLockTimeoutDelay;
-        if (mSlideLockDelay == WindowManagerPolicy.OFF_BECAUSE_OF_TIMEOUT) {
-            slideLockTimeoutDelay = Settings.System.getInt(cr,
-                    Settings.System.SCREEN_LOCK_SLIDE_TIMEOUT_DELAY,
-                    KEYGUARD_LOCK_AFTER_DELAY_DEFAULT);
-        } else {
-            slideLockTimeoutDelay = Settings.System.getInt(cr,
-                    Settings.System.SCREEN_LOCK_SLIDE_SCREENOFF_DELAY, 0);
-        }
-
         // From DevicePolicyAdmin
         final long policyTimeout = mLockPatternUtils.getDevicePolicyManager()
                 .getMaximumTimeToLock(null, mLockPatternUtils.getCurrentUser());
@@ -735,7 +657,7 @@ public class KeyguardViewMediator {
             displayTimeout = Math.max(displayTimeout, 0); // ignore negative values
             timeout = Math.min(policyTimeout - displayTimeout, lockAfterTimeout);
         } else {
-            timeout = separateSlideLockTimeoutEnabled ? slideLockTimeoutDelay : lockAfterTimeout;
+            timeout = lockAfterTimeout;
         }
 
         if (timeout <= 0) {
@@ -1011,16 +933,6 @@ public class KeyguardViewMediator {
             return;
         }
 
-        // if the current profile has disabled us, don't show
-        Profile profile = mProfileManager.getActiveProfile();
-        if (profile != null) {
-            if (!lockedOrMissing
-                    && profile.getScreenLockMode() == Profile.LockMode.DISABLE) {
-                if (DEBUG) Log.d(TAG, "doKeyguard: not showing because of profile override");
-                return;
-            }
-        }
-
         if (DEBUG) Log.d(TAG, "doKeyguard: showing the lock screen");
         showLocked(options);
     }
@@ -1288,10 +1200,6 @@ public class KeyguardViewMediator {
             return;
         }
 
-        if (QuietHoursHelper.inQuietHours(mContext, Settings.System.QUIET_HOURS_SYSTEM)) {
-            return;
-        }
-
         final ContentResolver cr = mContext.getContentResolver();
         if (Settings.System.getInt(cr, Settings.System.LOCKSCREEN_SOUNDS_ENABLED, 1) == 1) {
             final int whichSound = locked
@@ -1306,8 +1214,9 @@ public class KeyguardViewMediator {
             }
             // If the stream is muted, don't play the sound
             if (mAudioManager.isStreamMute(mMasterStreamType)) return;
-            //mute sound if music is playing
-            if (mAudioManager.isMusicActive ()) return;
+
+            // If music is playing, don't play the sound
+            if (mAudioManager.isMusicActive()) return;
 
             mLockSoundStreamId = mLockSounds.play(whichSound,
                     mLockSoundVolume, mLockSoundVolume, 1/*priortiy*/, 0/*loop*/, 1.0f/*rate*/);

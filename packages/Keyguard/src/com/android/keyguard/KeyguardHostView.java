@@ -77,7 +77,6 @@ public class KeyguardHostView extends KeyguardViewBase {
     static final int TRANSPORT_GONE = 0;
     static final int TRANSPORT_INVISIBLE = 1;
     static final int TRANSPORT_VISIBLE = 2;
-    private boolean mTransportShouldBeVisible;
 
     private int mTransportState = TRANSPORT_GONE;
 
@@ -99,12 +98,11 @@ public class KeyguardHostView extends KeyguardViewBase {
     private KeyguardTransportControlView mTransportControl;
     private ChallengeLayout mChallenge;
     private boolean mIsVerifyUnlockOnly;
+    private View mExpandChallengeView;
     private boolean mEnableFallback; // TODO: This should get the value from KeyguardPatternView
     private SecurityMode mCurrentSecuritySelection = SecurityMode.Invalid;
     private int mAppWidgetToShow;
     private boolean mDefaultAppWidgetAttached;
-
-    private View mExpandChallengeView;
 
     protected OnDismissAction mDismissAction;
 
@@ -420,9 +418,6 @@ public class KeyguardHostView extends KeyguardViewBase {
 
         setBackButtonEnabled(false);
 
-        mTransportShouldBeVisible = Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.LOCKSCREEN_MUSIC_CONTROLS, 1, UserHandle.USER_CURRENT) != 0;
-
         if (KeyguardUpdateMonitor.getInstance(mContext).hasBootCompleted()) {
             updateAndAddWidgets();
         } else {
@@ -537,10 +532,11 @@ public class KeyguardHostView extends KeyguardViewBase {
     }
 
     private boolean widgetsDisabled() {
+        boolean disabledByLowRamDevice = ActivityManager.isLowRamDeviceStatic();
         boolean disabledByDpm =
                 (mDisabledFeatures & DevicePolicyManager.KEYGUARD_DISABLE_WIDGETS_ALL) != 0;
         boolean disabledByUser = !mLockPatternUtils.getWidgetsEnabled();
-        return disabledByDpm || disabledByUser;
+        return disabledByLowRamDevice || disabledByDpm || disabledByUser;
     }
 
     private boolean cameraDisabledByDpm() {
@@ -1651,7 +1647,7 @@ public class KeyguardHostView extends KeyguardViewBase {
         final boolean showing = getWidgetPosition(R.id.keyguard_transport_control) != -1;
         final boolean visible = state == TRANSPORT_VISIBLE;
         final boolean shouldBeVisible = state == TRANSPORT_INVISIBLE && isMusicPlaying(state);
-        if (!showing && mTransportShouldBeVisible && (visible || shouldBeVisible)) {
+        if (!showing && (visible || shouldBeVisible)) {
             // insert to left of camera if it exists, otherwise after right-most widget
             int lastWidget = mAppWidgetContainer.getChildCount() - 1;
             int position = 0; // handle no widget case
@@ -1662,7 +1658,7 @@ public class KeyguardHostView extends KeyguardViewBase {
             if (DEBUGXPORT) Log.v(TAG, "add transport at " + position);
             mAppWidgetContainer.addWidget(getOrCreateTransportControl(), position);
             return true;
-        } else if (showing && (state == TRANSPORT_GONE || !mTransportShouldBeVisible)) {
+        } else if (showing && state == TRANSPORT_GONE) {
             if (DEBUGXPORT) Log.v(TAG, "remove transport");
             mAppWidgetContainer.removeWidget(getOrCreateTransportControl());
             mTransportControl = null;
@@ -1697,7 +1693,7 @@ public class KeyguardHostView extends KeyguardViewBase {
             mAppWidgetToShow = AppWidgetManager.INVALID_APPWIDGET_ID;
         }
         // if music playing, show transport
-        if (musicTransportState == TRANSPORT_VISIBLE && mTransportShouldBeVisible) {
+        if (musicTransportState == TRANSPORT_VISIBLE) {
             if (DEBUG) Log.d(TAG, "Music playing, show transport");
             return mAppWidgetContainer.getWidgetPageIndex(getOrCreateTransportControl());
         }
@@ -1807,9 +1803,11 @@ public class KeyguardHostView extends KeyguardViewBase {
         final boolean configDisabled = res.getBoolean(R.bool.config_disableMenuKeyInLockScreen);
         final boolean isTestHarness = ActivityManager.isRunningInTestHarness();
         final boolean fileOverride = (new File(ENABLE_MENU_KEY_FILE)).exists();
-        final boolean menuOverride = Settings.System.getInt(getContext().getContentResolver(),
-                Settings.System.MENU_UNLOCK_SCREEN, 0) == 1;
-        return !configDisabled || isTestHarness || fileOverride || menuOverride;
+        final boolean settingsEnabled = Settings.System.getIntForUser(
+                getContext().getContentResolver(),
+                Settings.System.MENU_UNLOCK_SCREEN, configDisabled ? 0 : 1,
+                UserHandle.USER_CURRENT) == 1;
+        return settingsEnabled || isTestHarness || fileOverride;
     }
 
     private boolean shouldEnableHomeKey() {

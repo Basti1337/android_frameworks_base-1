@@ -95,17 +95,7 @@ public class PolicyHelper {
 
         if (!clickAction.startsWith("**")) {
             try {
-                String extraIconPath = clickAction.replaceAll(".*?hasExtraIcon=", "");
-                if (extraIconPath != null && !extraIconPath.isEmpty()) {
-                    File f = new File(Uri.parse(extraIconPath).getPath());
-                    if (f.exists()) {
-                        d = new BitmapDrawable(context.getResources(),
-                                f.getAbsolutePath());
-                    }
-                }
-                if (d == null) {
-                    d = pm.getActivityIcon(Intent.parseUri(clickAction, 0));
-                }
+                d = pm.getActivityIcon(Intent.parseUri(clickAction, 0));
             } catch (NameNotFoundException e) {
                 Resources systemUiResources;
                 try {
@@ -203,5 +193,4 @@ public class PolicyHelper {
         }
         return null;
     }
-
 }

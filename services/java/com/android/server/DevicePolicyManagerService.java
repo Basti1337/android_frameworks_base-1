@@ -80,7 +80,6 @@ import android.security.Credentials;
 import android.security.IKeyChainService;
 import android.security.KeyChain;
 import android.security.KeyChain.KeyChainConnection;
-import android.security.KeyStore;
 import android.util.AtomicFile;
 import android.util.Log;
 import android.util.PrintWriterPrinter;
@@ -876,6 +875,14 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                 // Ignore
             }
             journal.rollback();
+        } finally {
+            try {
+                if (stream != null) {
+                    stream.close();
+                }
+            } catch (IOException ex) {
+                // Ignore
+            }
         }
     }
 
@@ -2771,36 +2778,6 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
         }
         return null;
-    }
-
-    @Override
-    public boolean requireSecureKeyguard(int userHandle) {
-        if (!mHasFeature) {
-            return false;
-        }
-
-        int passwordQuality = getPasswordQuality(null, userHandle);
-        if (passwordQuality > DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED) {
-            return true;
-        }
-
-        int encryptionStatus = getStorageEncryptionStatus(userHandle);
-        if (encryptionStatus == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVE
-                || encryptionStatus == DevicePolicyManager.ENCRYPTION_STATUS_ACTIVATING) {
-            return true;
-        }
-
-        // Keystore.isEmpty() requires system UID
-        long token = Binder.clearCallingIdentity();
-        try {
-            if (!KeyStore.getInstance().isEmpty()) {
-                return true;
-            }
-        } finally {
-            Binder.restoreCallingIdentity(token);
-        }
-
-        return false;
     }
 
     private boolean isDeviceProvisioned() {

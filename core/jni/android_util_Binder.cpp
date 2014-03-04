@@ -924,7 +924,7 @@ static jstring android_os_BinderProxy_getInterfaceDescriptor(JNIEnv* env, jobjec
     IBinder* target = (IBinder*) env->GetIntField(obj, gBinderProxyOffsets.mObject);
     if (target != NULL) {
         const String16& desc = target->getInterfaceDescriptor();
-        return env->NewString(desc.string(), desc.size());
+	return env->NewString((jchar*)desc.string(), desc.size());
     }
     jniThrowException(env, "java/lang/RuntimeException",
             "No binder found for object");
@@ -943,13 +943,20 @@ static jboolean android_os_BinderProxy_isBinderAlive(JNIEnv* env, jobject obj)
 }
 
 static int getprocname(pid_t pid, char *buf, size_t len) {
-    char filename[20];
+    char filename[32];
     FILE *f;
 
-    sprintf(filename, "/proc/%d/cmdline", pid);
+    snprintf(filename, sizeof(filename), "/proc/%d/cmdline", pid);
     f = fopen(filename, "r");
-    if (!f) { *buf = '\0'; return 1; }
-    if (!fgets(buf, len, f)) { *buf = '\0'; return 2; }
+    if (!f) {
+        *buf = '\0';
+        return 1;
+    }
+    if (!fgets(buf, len, f)) {
+        *buf = '\0';
+        fclose(f);
+        return 2;
+    }
     fclose(f);
     return 0;
 }
