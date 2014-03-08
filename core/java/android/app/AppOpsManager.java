@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
- *
  * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -27,7 +24,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
-import android.os.SystemProperties;
 import android.util.ArrayMap;
 
 import com.android.internal.app.IAppOpsService;
@@ -95,15 +91,9 @@ public class AppOpsManager {
      */
     public static final int MODE_ERRORED = 2;
 
-    /** @hide This mode should never be returned to caller
-     * Result from {@link #checkOp} the given caller is
-     * not allowed to perform the given operation.
-     */
-    public static final int MODE_ASK = 3;
-
     // when adding one of these:
     //  - increment _NUM_OP
-    //  - add rows to sOpToSwitch, sOpToString, sOpNames, sOpPerms, sOpDefaultMode, sOpDefaultStrictMode
+    //  - add rows to sOpToSwitch, sOpToString, sOpNames, sOpPerms, sPrivacyGuardOp, sOpDefaultMode
     //  - add descriptive strings to Settings/res/values/arrays.xml
     //  - add the op to the appropriate template in AppOpsState.OpsTemplate (settings app)
 
@@ -196,23 +186,7 @@ public class AppOpsManager {
     /** @hide Continually monitoring location data with a relatively high power request. */
     public static final int OP_MONITOR_HIGH_POWER_LOCATION = 42;
     /** @hide */
-    public static final int OP_WIFI_CHANGE = 43;
-    /** @hide */
-    public static final int OP_BLUETOOTH_CHANGE = 44;
-    /** @hide */
-    public static final int OP_DATA_CONNECT_CHANGE = 45;
-    /** @hide */
-    public static final int OP_ALARM_WAKEUP = 46;
-    /** @hide */
-    public static final int OP_SEND_MMS = 47;
-    /** @hide */
-    public static final int OP_READ_MMS = 48;
-    /** @hide */
-    public static final int OP_WRITE_MMS = 49;
-    /** @hide */
-    public static final int OP_BOOT_COMPLETED = 50;
-    /** @hide */
-    public static final int _NUM_OP = 51;
+    public static final int _NUM_OP = 43;
 
     /** Access to coarse location information. */
     public static final String OPSTR_COARSE_LOCATION =
@@ -279,14 +253,6 @@ public class AppOpsManager {
             OP_WAKE_LOCK,
             OP_COARSE_LOCATION,
             OP_COARSE_LOCATION,
-            OP_WIFI_CHANGE,
-            OP_BLUETOOTH_CHANGE,
-            OP_DATA_CONNECT_CHANGE,
-            OP_ALARM_WAKEUP,
-            OP_SEND_MMS,
-            OP_READ_MMS,
-            OP_WRITE_MMS,
-            OP_BOOT_COMPLETED,
     };
 
     /**
@@ -337,14 +303,6 @@ public class AppOpsManager {
             null,
             OPSTR_MONITOR_LOCATION,
             OPSTR_MONITOR_HIGH_POWER_LOCATION,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
     };
 
     /**
@@ -395,14 +353,6 @@ public class AppOpsManager {
             "WAKE_LOCK",
             "MONITOR_LOCATION",
             "MONITOR_HIGH_POWER_LOCATION",
-            "WIFI_CHANGE",
-            "BLUETOOTH_CHANGE",
-            "DATA_CONNECT_CHANGE",
-            "ALARM_WAKEUP",
-            "SEND_MMS",
-            "READ_MMS",
-            "WRITE_MMS",
-            "BOOT_COMPLETED",
     };
 
     /**
@@ -453,14 +403,6 @@ public class AppOpsManager {
             android.Manifest.permission.WAKE_LOCK,
             null, // no permission for generic location monitoring
             null, // no permission for high power location monitoring
-            android.Manifest.permission.CHANGE_WIFI_STATE,
-            android.Manifest.permission.BLUETOOTH,
-            android.Manifest.permission.CHANGE_NETWORK_STATE,
-            null, // OP_ALARM_WAKEUP
-            android.Manifest.permission.SEND_SMS,
-            android.Manifest.permission.READ_SMS,
-            android.Manifest.permission.WRITE_SMS,
-            android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
     };
 
     /**
@@ -533,116 +475,50 @@ public class AppOpsManager {
      * This specifies the default mode for each operation.
      */
     private static int[] sOpDefaultMode = new int[] {
-            AppOpsManager.MODE_ALLOWED, // OP_COARSE_LOCATION
-            AppOpsManager.MODE_ALLOWED, // OP_FINE_LOCATION
-            AppOpsManager.MODE_ALLOWED, // OP_GPS
-            AppOpsManager.MODE_ALLOWED, // OP_VIBRATE
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CONTACTS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CONTACTS
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CALL_LOG
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CALL_LOG
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CALENDAR
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CALENDAR
-            AppOpsManager.MODE_ALLOWED, // OP_WIFI_SCAN
-            AppOpsManager.MODE_ALLOWED, // OP_POST_NOTIFICATION
-            AppOpsManager.MODE_ALLOWED, // OP_NEIGHBORING_CELLS
-            AppOpsManager.MODE_ALLOWED, // OP_CALL_PHONE
-            AppOpsManager.MODE_ALLOWED, // OP_READ_SMS
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
             AppOpsManager.MODE_IGNORED, // OP_WRITE_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_EMERGECY_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_WAP_PUSH
-            AppOpsManager.MODE_ALLOWED, // OP_SEND_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_READ_ICC_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_ICC_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_SETTINGS
-            AppOpsManager.MODE_ALLOWED, // OP_SYSTEM_ALERT_WINDOW
-            AppOpsManager.MODE_ALLOWED, // OP_ACCESS_NOTIFICATIONS
-            AppOpsManager.MODE_ALLOWED, // OP_CAMERA
-            AppOpsManager.MODE_ALLOWED, // OP_RECORD_AUDIO
-            AppOpsManager.MODE_ALLOWED, // OP_PLAY_AUDIO
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CLIPBOARD
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CLIPBOARD
-            AppOpsManager.MODE_ALLOWED, // OP_TAKE_MEDIA_BUTTONS
-            AppOpsManager.MODE_ALLOWED, // OP_TAKE_AUDIO_FOCUS
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_MASTER_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_VOICE_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_RING_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_MEDIA_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_ALARM_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_NOTIFICATION_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_BLUETOOTH_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_WAKE_LOCK
-            AppOpsManager.MODE_ALLOWED, // OP_MONITOR_LOCATION
-            AppOpsManager.MODE_ALLOWED, // OP_MONITOR_HIGH_POWER_LOCATION
-            AppOpsManager.MODE_ALLOWED, // OP_WIFI_CHANGE
-            AppOpsManager.MODE_ALLOWED, // OP_BLUETOOTH_CHANGE
-            AppOpsManager.MODE_ALLOWED, // OP_DATA_CHANGE
-            AppOpsManager.MODE_ALLOWED, // OP_ALARM_WAKEUP
-            AppOpsManager.MODE_ALLOWED, // OP_SEND_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_READ_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_BOOT_COMPLETED
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
+            AppOpsManager.MODE_ALLOWED,
     };
-
-    /**
-     * This specifies the default mode for each strict operation.
-     */
-    private static int[] sOpDefaultStrictMode = new int[] {
-            AppOpsManager.MODE_ASK,     // OP_COARSE_LOCATION
-            AppOpsManager.MODE_ASK,     // OP_FINE_LOCATION
-            AppOpsManager.MODE_ASK,     // OP_GPS
-            AppOpsManager.MODE_ALLOWED, // OP_VIBRATE
-            AppOpsManager.MODE_ASK,     // OP_READ_CONTACTS
-            AppOpsManager.MODE_ASK,     // OP_WRITE_CONTACTS
-            AppOpsManager.MODE_ASK,     // OP_READ_CALL_LOG
-            AppOpsManager.MODE_ASK,     // OP_WRITE_CALL_LOG
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CALENDAR
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CALENDAR
-            AppOpsManager.MODE_ASK,     // OP_WIFI_SCAN
-            AppOpsManager.MODE_ALLOWED, // OP_POST_NOTIFICATION
-            AppOpsManager.MODE_ALLOWED, // OP_NEIGHBORING_CELLS
-            AppOpsManager.MODE_ASK,     // OP_CALL_PHONE
-            AppOpsManager.MODE_ASK,     // OP_READ_SMS
-            AppOpsManager.MODE_IGNORED, // OP_WRITE_SMS
-            AppOpsManager.MODE_ASK,     // OP_RECEIVE_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_EMERGECY_SMS
-            AppOpsManager.MODE_ASK,     // OP_RECEIVE_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_RECEIVE_WAP_PUSH
-            AppOpsManager.MODE_ASK,     // OP_SEND_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_READ_ICC_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_ICC_SMS
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_SETTINGS
-            AppOpsManager.MODE_ALLOWED, // OP_SYSTEM_ALERT_WINDOW
-            AppOpsManager.MODE_ALLOWED, // OP_ACCESS_NOTIFICATIONS
-            AppOpsManager.MODE_ASK,     // OP_CAMERA
-            AppOpsManager.MODE_ASK,     // OP_RECORD_AUDIO
-            AppOpsManager.MODE_ALLOWED, // OP_PLAY_AUDIO
-            AppOpsManager.MODE_ALLOWED, // OP_READ_CLIPBOARD
-            AppOpsManager.MODE_ALLOWED, // OP_WRITE_CLIPBOARD
-            AppOpsManager.MODE_ALLOWED, // OP_TAKE_MEDIA_BUTTONS
-            AppOpsManager.MODE_ALLOWED, // OP_TAKE_AUDIO_FOCUS
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_MASTER_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_VOICE_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_RING_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_MEDIA_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_ALARM_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_NOTIFICATION_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_AUDIO_BLUETOOTH_VOLUME
-            AppOpsManager.MODE_ALLOWED, // OP_WAKE_LOCK
-            AppOpsManager.MODE_ALLOWED, // OP_MONITOR_LOCATION
-            AppOpsManager.MODE_ASK,     // OP_MONITOR_HIGH_POWER_LOCATION
-            AppOpsManager.MODE_ASK,     // OP_WIFI_CHANGE
-            AppOpsManager.MODE_ASK,     // OP_BLUETOOTH_CHANGE
-            AppOpsManager.MODE_ASK,     // OP_DATA_CHANGE
-            AppOpsManager.MODE_ASK,     // OP_ALARM_WAKEUP
-            AppOpsManager.MODE_ASK,     // OP_SEND_MMS
-            AppOpsManager.MODE_ASK,     // OP_READ_MMS
-            AppOpsManager.MODE_ASK,     // OP_WRITE_MMS
-            AppOpsManager.MODE_ALLOWED, // OP_BOOT_COMPLETED
-    };
-
 
     /**
      * This specifies whether each option is allowed to be reset
@@ -695,19 +571,9 @@ public class AppOpsManager {
             false,
             false,
             false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
-            false,
     };
 
     private static HashMap<String, Integer> sOpStrToOp = new HashMap<String, Integer>();
-
-    private static HashMap<String, Integer> sNameToOp = new HashMap<String, Integer>();
 
     static {
         if (sOpToSwitch.length != _NUM_OP) {
@@ -730,10 +596,6 @@ public class AppOpsManager {
             throw new IllegalStateException("sOpDefaultMode length " + sOpDefaultMode.length
                     + " should be " + _NUM_OP);
         }
-        if (sOpDefaultStrictMode.length != _NUM_OP) {
-            throw new IllegalStateException("sOpDefaultStrictMode length " + sOpDefaultStrictMode.length
-                    + " should be " + _NUM_OP);
-        }
         if (sOpDisableReset.length != _NUM_OP) {
             throw new IllegalStateException("sOpDisableReset length " + sOpDisableReset.length
                     + " should be " + _NUM_OP);
@@ -742,9 +604,6 @@ public class AppOpsManager {
             if (sOpToString[i] != null) {
                 sOpStrToOp.put(sOpToString[i], i);
             }
-        }
-        for (int i=0; i<_NUM_OP; i++) {
-            sNameToOp.put(sOpNames[i], i);
         }
     }
 
@@ -763,15 +622,6 @@ public class AppOpsManager {
     public static String opToName(int op) {
         if (op == OP_NONE) return "NONE";
         return op < sOpNames.length ? sOpNames[op] : ("Unknown(" + op + ")");
-    }
-
-    /**
-     * Map a non-localized name for the operation back to the Op number
-     * @hide
-     */
-    public static int nameToOp(String name) {
-        Integer val = sNameToOp.get(name);
-        return val != null ? val : OP_NONE;
     }
 
     /**
@@ -800,11 +650,8 @@ public class AppOpsManager {
      * Retrieve the default mode for the operation.
      * @hide
      */
-    public static int opToDefaultMode(int op, boolean strict) {
-        if(strict)
-            return sOpDefaultStrictMode[op];
-        else
-            return sOpDefaultMode[op];
+    public static int opToDefaultMode(int op) {
+        return sOpDefaultMode[op];
     }
 
     /**
@@ -888,18 +735,13 @@ public class AppOpsManager {
         private final long mTime;
         private final long mRejectTime;
         private final int mDuration;
-        private final int mAllowedCount;
-        private final int mIgnoredCount;
 
-        public OpEntry(int op, int mode, long time, long rejectTime, int duration,
-                int allowedCount, int ignoredCount) {
+        public OpEntry(int op, int mode, long time, long rejectTime, int duration) {
             mOp = op;
             mMode = mode;
             mTime = time;
             mRejectTime = rejectTime;
             mDuration = duration;
-            mAllowedCount = allowedCount;
-            mIgnoredCount = ignoredCount;
         }
 
         public int getOp() {
@@ -926,14 +768,6 @@ public class AppOpsManager {
             return mDuration == -1 ? (int)(System.currentTimeMillis()-mTime) : mDuration;
         }
 
-        public int getAllowedCount() {
-            return mAllowedCount;
-        }
-
-        public int getIgnoredCount() {
-            return mIgnoredCount;
-        }
-
         @Override
         public int describeContents() {
             return 0;
@@ -946,8 +780,6 @@ public class AppOpsManager {
             dest.writeLong(mTime);
             dest.writeLong(mRejectTime);
             dest.writeInt(mDuration);
-            dest.writeInt(mAllowedCount);
-            dest.writeInt(mIgnoredCount);
         }
 
         OpEntry(Parcel source) {
@@ -956,8 +788,6 @@ public class AppOpsManager {
             mTime = source.readLong();
             mRejectTime = source.readLong();
             mDuration = source.readInt();
-            mAllowedCount = source.readInt();
-            mIgnoredCount = source.readInt();
         }
 
         public static final Creator<OpEntry> CREATOR = new Creator<OpEntry>() {
@@ -1432,18 +1262,5 @@ public class AppOpsManager {
                 return com.android.internal.R.drawable.stat_notify_privacy_guard_custom_plus;
         }
         return com.android.internal.R.drawable.stat_notify_privacy_guard_off;
-    }
-
-    /** @hide */
-    public void resetCounters() {
-        try {
-            mService.resetCounters();
-        } catch (RemoteException e) {
-        }
-    }
-
-    /** @hide */
-    public static boolean isStrictEnable() {
-        return SystemProperties.getBoolean("persist.sys.strict_op_enable", false);
     }
 }

@@ -208,6 +208,7 @@
   <java-symbol type="anim" name="slide_out_left_no_fade" />
   <java-symbol type="anim" name="slide_in_left_no_fade" />
   <java-symbol type="anim" name="slide_out_right_no_fade" />
+  <java-symbol type="array" name="anim_controls_entries" />
 
   <!-- Progress bar -->
   <java-symbol type="dimen" name="spb_default_stroke_width" />
