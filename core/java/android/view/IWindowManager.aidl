@@ -340,4 +340,11 @@ interface IWindowManager
      * @hide
      */
     void toggleStatusBar();
+
+    /**
+     * Get current system ui visibility mode.
+     *
+     * @hide
+     */
+    int getSystemUIVisibility();
 }
