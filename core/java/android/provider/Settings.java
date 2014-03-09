@@ -2784,12 +2784,6 @@ public final class Settings {
         public static final String GESTURE_ANYWHERE_SHOW_TRIGGER = "gesture_anywhere_show_trigger";
 
         /**
-         * Whether to showing wallpaper behind active display.
-         * @hide
-         */
-        public static final String ACTIVE_DISPLAY_WALLPAPER = "active_display_wallpaper";
-
-        /**
          * Whether to not showing active display when there is annoying notifications.
          * @hide
          */
