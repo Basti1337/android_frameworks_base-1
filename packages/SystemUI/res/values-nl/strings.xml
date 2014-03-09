@@ -23,7 +23,7 @@
     <string name="status_bar_clear_all_button" msgid="7774721344716731603">"Wissen"</string>
     <string name="status_bar_recent_remove_item_title" msgid="6026395868129852968">"Verwijderen uit lijst"</string>
     <string name="status_bar_recent_inspect_item_title" msgid="7793624864528818569">"App-info"</string>
-    <string name="status_bar_no_recent_apps" msgid="6576392951053994640">"Geen recente apps"</string>
+    <string name="status_bar_no_recent_apps" msgid="6576392951053994640">"Geen"</string>
     <string name="status_bar_accessibility_dismiss_recents" msgid="4576076075226540105">"Recente apps negeren"</string>
   <plurals name="status_bar_accessibility_recent_apps">
     <item quantity="one" msgid="5854176083865845541">"1 recente app"</item>
