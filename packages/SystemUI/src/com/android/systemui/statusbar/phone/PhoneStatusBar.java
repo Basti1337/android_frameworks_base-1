@@ -730,6 +730,13 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                 updateCarrierAndWifiLabelVisibility(false);
             }
 
+            int sidebarPosition = Settings.System.getInt(
+                    resolver, Settings.System.APP_SIDEBAR_POSITION, AppSidebar.SIDEBAR_POSITION_LEFT);
+            if (sidebarPosition != mSidebarPosition) {
+                mSidebarPosition = sidebarPosition;
+                mWindowManager.updateViewLayout(mAppSidebar, getAppSidebarLayoutParams(sidebarPosition));
+            }
+
             mCustomColor = Settings.System.getIntForUser(resolver,
                     Settings.System.CUSTOM_SYSTEM_ICON_COLOR, 0, UserHandle.USER_CURRENT) == 1;
             systemColor = Settings.System.getIntForUser(resolver,
@@ -1166,7 +1173,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                 mNavigationBarView =
                     (NavigationBarView) View.inflate(context, R.layout.navigation_bar, null);
             }
-            removeSidebarView();
 
             mNavigationBarView.setDisabledFlags(mDisabled);
             mNavigationBarView.setBar(this);
@@ -1181,6 +1187,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
 
         if (mRecreating) {
+            removeSidebarView();
         } else {
             addActiveDisplayView();
             /* ChaosLab: GestureAnywhere - BEGIN */
@@ -1190,6 +1197,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         // Setup pie container if enabled
         attachPieContainer(isPieEnabled());
+
+        addSidebarView();
 
         // figure out which pixel-format to use for the status bar.
         mPixelFormat = PixelFormat.OPAQUE;
