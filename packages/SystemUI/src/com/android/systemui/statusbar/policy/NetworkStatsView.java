@@ -34,8 +34,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import com.android.systemui.R;
 
-import java.lang.Math;
-
 public class NetworkStatsView extends LinearLayout {
 
     private Handler mHandler;
@@ -43,6 +41,7 @@ public class NetworkStatsView extends LinearLayout {
     // state variables
     private boolean mAttached;      // whether or not attached to a window
     private boolean mActivated;     // whether or not activated due to system settings
+    private boolean mNetStatsHide;  // whether or not hide, if there is no traffic
 
     private TextView mTextViewTx;
     private TextView mTextViewRx;
@@ -50,7 +49,6 @@ public class NetworkStatsView extends LinearLayout {
     private long mLastRx;
     private long mRefreshInterval;
     private long mLastUpdateTime;
-    private Context mContext;
 
     SettingsObserver mSettingsObserver;
 
@@ -64,7 +62,6 @@ public class NetworkStatsView extends LinearLayout {
 
     public NetworkStatsView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        mContext = context;
         mLastRx = TrafficStats.getTotalRxBytes();
         mLastTx = TrafficStats.getTotalTxBytes();
         mHandler = new Handler();
@@ -74,7 +71,7 @@ public class NetworkStatsView extends LinearLayout {
     // runnable to invalidate view via mHandler.postDelayed() call
     private final Runnable mUpdateRunnable = new Runnable() {
         public void run() {
-            if (mActivated && mAttached) {
+            if(mActivated && mAttached) {
                 updateStats();
                 invalidate();
             }
@@ -88,11 +85,15 @@ public class NetworkStatsView extends LinearLayout {
         }
 
         public void observe() {
-            ContentResolver resolver = mContext.getContentResolver();
+            final ContentResolver resolver = mContext.getContentResolver();
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_NETWORK_STATS), false, this);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_NETWORK_STATS_UPDATE_INTERVAL), false, this);
+	    resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.STATUS_BAR_NETWORK_COLOR), false, this);
+	    resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.STATUS_BAR_NETWORK_HIDE), false, this);
             onChange(true);
         }
 
@@ -104,9 +105,7 @@ public class NetworkStatsView extends LinearLayout {
         public void onChange(boolean selfChange) {
             // check for connectivity
             ConnectivityManager cm =
-                    (ConnectivityManager)getContext().getSystemService(
-                            Context.CONNECTIVITY_SERVICE);
-
+                    (ConnectivityManager)mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
             boolean networkAvailable = activeNetwork != null ? activeNetwork.isConnected() : false;
 
@@ -114,16 +113,32 @@ public class NetworkStatsView extends LinearLayout {
             boolean isScreenOn = pm.isScreenOn();
 
             mActivated = (Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.STATUS_BAR_NETWORK_STATS, 0)) == 1 && networkAvailable;
+                    Settings.System.STATUS_BAR_NETWORK_STATS, 0)) == 1
+                    && networkAvailable && isScreenOn;
 
             mRefreshInterval = Settings.System.getLong(mContext.getContentResolver(),
                     Settings.System.STATUS_BAR_NETWORK_STATS_UPDATE_INTERVAL, 500);
 
-            setVisibility(mActivated ? View.VISIBLE : View.GONE);
+	    // Custom colors
+	    int defaultColor = Settings.System.getInt(mContext.getContentResolver(),
+                Settings.System.STATUS_BAR_NETWORK_COLOR, 0xFF33b5e5);
 
-            if (mActivated && mAttached && isScreenOn) {
-                updateStats();
+	    int mStatusBarNetworkColor = Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.STATUS_BAR_NETWORK_COLOR, -2);
+
+	    if (mStatusBarNetworkColor == Integer.MIN_VALUE
+                || mStatusBarNetworkColor == -2) {
+                // flag to reset the color
+                mStatusBarNetworkColor = defaultColor;
             }
+
+	    mTextViewTx.setTextColor(mStatusBarNetworkColor);
+            mTextViewRx.setTextColor(mStatusBarNetworkColor);
+
+            mNetStatsHide = (Settings.System.getInt(mContext.getContentResolver(),
+                    Settings.System.STATUS_BAR_NETWORK_HIDE, 1) == 1);
+
+            updateStats();
         }
     }
 
@@ -177,6 +192,9 @@ public class NetworkStatsView extends LinearLayout {
 
     private void updateStats() {
         if (!mActivated || !mAttached) {
+	    if (getVisibility() != GONE) {
+                setVisibility(View.GONE);
+            }
             mHandler.removeCallbacks(mUpdateRunnable);
             return;
         }
@@ -199,36 +217,33 @@ public class NetworkStatsView extends LinearLayout {
         setTextViewSpeed(mTextViewTx, deltaBytesTx, deltaT);
         setTextViewSpeed(mTextViewRx, deltaBytesRx, deltaT);
 
+	if (mNetStatsHide && deltaBytesRx == 0 && deltaBytesTx == 0) {
+            if (getVisibility() != GONE) {
+                setVisibility(View.GONE);
+            }
+        } else {
+            if (getVisibility() != VISIBLE) {
+                setVisibility(View.VISIBLE);
+            }
+        }
+
         mHandler.removeCallbacks(mUpdateRunnable);
         mHandler.postDelayed(mUpdateRunnable, mRefreshInterval);
     }
 
     private void setTextViewSpeed(TextView tv, long speed, float deltaT) {
-        long lSpeed = Math.round(speed / deltaT);
+        String units = "B/s";
+        float fSpeed = speed / deltaT;
+        if (fSpeed >= TrafficStats.MB_IN_BYTES) {
+            units = "MB/s";
+            fSpeed = fSpeed / TrafficStats.MB_IN_BYTES;
+        } else if (fSpeed >= TrafficStats.KB_IN_BYTES) {
+            units = "KB/s";
+            fSpeed = fSpeed / TrafficStats.KB_IN_BYTES;
+        }
 
-        tv.setText(formatTraffic(lSpeed));
-    }
-
-    private String formatTraffic(long number) {
-        float result = number;
-        int suffix = com.android.internal.R.string.byteShort;
-        if (result >= 1024) {
-            suffix = com.android.internal.R.string.kilobyteShort;
-            result = result / 1024;
-        }
-        if (result >= 1024) {
-            suffix = com.android.internal.R.string.megabyteShort;
-            result = result / 1024;
-        }
-        String value;
-        // if we just have bytes show no decimal places
-        if (number < 1024) {
-            value = String.format("%.0f", result);
-        } else {
-            value = String.format("%.1f", result);
-        }
-        return mContext.getResources().
-            getString(com.android.internal.R.string.fileSizeSuffix,
-                      value, mContext.getString(suffix));
+        tv.setText(fSpeed == (int) fSpeed ?
+                String.format("%d %s", (int)fSpeed, units) :
+                String.format("%.1f %s", fSpeed, units));
     }
 }
