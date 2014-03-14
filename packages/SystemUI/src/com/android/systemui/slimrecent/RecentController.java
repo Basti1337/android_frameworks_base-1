@@ -221,6 +221,7 @@ public class RecentController implements RecentPanelView.OnExitListener,
         }
         // Rebuild complete adapter and lists to force style updates.
         if (mRecentPanelView != null) {
+            mIsPreloaded = false;
             mRecentPanelView.buildCardListAndAdapter();
         }
     }
