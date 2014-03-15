@@ -663,6 +663,12 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                 if (mNotificationShortcutsLayout != null) {
                     mNotificationShortcutsLayout.updateShortcuts();
                 }
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.PIE_CONTROLS))) {
+                attachPieContainer(isPieEnabled());
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.EXPANDED_DESKTOP_STATE))) {
+                mNavigationBarOverlay.setIsExpanded(isExpanded());
             } else if (uri != null && uri.equals(Settings.System.getUriFor(
                     Settings.System.QS_QUICK_ACCESS))) {
                 final ContentResolver resolver = mContext.getContentResolver();
@@ -696,12 +702,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                 if (mQuickAccessLayoutLinked && mRibbonQS != null) {
                     mRibbonQS.setupQuickSettings();
                 }
-            } else if (uri.equals(Settings.System.getUriFor(
-                    Settings.System.PIE_CONTROLS))) {
-                attachPieContainer(isPieEnabled());
-            } else if (uri.equals(Settings.System.getUriFor(
-                    Settings.System.EXPANDED_DESKTOP_STATE))) {
-                mNavigationBarOverlay.setIsExpanded(isExpanded());
             }
 
             update();
