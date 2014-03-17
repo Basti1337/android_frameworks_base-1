@@ -1629,7 +1629,7 @@ public class GlowPadView extends View {
     public void setArc(float angle, int color) {
         mArcAngle = angle;
         mArcPaint.setColor(color);
-    )
+    }
 
     private void setRingDrawable(Drawable ring) {
         Resources res = mContext.getResources();
