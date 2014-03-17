@@ -4658,7 +4658,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             if (down && isWakeKey && isWakeKeyWhenScreenOff(keyCode)) {
                 if ((keyCode != KeyEvent.KEYCODE_VOLUME_UP) && (keyCode != KeyEvent.KEYCODE_VOLUME_DOWN)) {
                     // Wake the device.
-                    result |= ACTION_WAKE_UP;
+                    mPowerManager.wakeUp(SystemClock.uptimeMillis());
                 }
             }
         }
