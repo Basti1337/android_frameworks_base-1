@@ -539,7 +539,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     Settings.System.QUICK_SETTINGS_RIBBON_TILES),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.getUriFor(Settings.System.NOTIFICATION_BRIGHTNESS_SLIDER),
+                    Settings.System.NOTIFICATION_BRIGHTNESS_SLIDER),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.PIE_CONTROLS),
@@ -1575,17 +1575,17 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     mRibbonView = null;
                     inflateRibbon();
                 }
+
+                // TODO: make multiuser aware
+                mBrightnessSliderEnabled = Settings.System.getBoolean(resolver,
+                        Settings.System.NOTIFICATION_BRIGHTNESS_SLIDER, false);
+                if (mBrightnessSliderEnabled) {
+                    cleanupBrightnessSlider();
+                    mBrightnessView = null;
+                    inflateBrightnessSlider();
+                }
             } else {
                 mQS = null; // fly away, be free
-            }
-
-            // TODO: make multiuser aware
-            mBrightnessSliderEnabled = Settings.System.getBoolean(resolver,
-                    Settings.System.NOTIFICATION_BRIGHTNESS_SLIDER, false);
-            if (mBrightnessSliderEnabled) {
-                cleanupBrightnessSlider();
-                mBrightnessView = null;
-                inflateBrightnessSlider();
             }
         }
 
@@ -2920,7 +2920,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             }
             if (mBrightnessView != null && mBrightnessSliderEnabled) {
                 mBrightnessView.setVisibility(View.VISIBLE);
-                mBrightnessView.setScaleX(-progress);
+                mBrightnessView.setScaleX(-percent);
             }
             mNotificationButton.setVisibility(View.GONE);
             updateCarrierAndWifiLabelVisibility(false);
