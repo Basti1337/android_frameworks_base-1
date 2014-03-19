@@ -54,6 +54,7 @@ import static com.android.internal.util.fusion.QSConstants.TILE_WIFI;
 import static com.android.internal.util.fusion.QSConstants.TILE_WIFIAP;
 import static com.android.internal.util.fusion.QSConstants.TILE_REBOOT;
 import static com.android.internal.util.fusion.QSConstants.TILE_INTERNALMEMORY;
+import static com.android.internal.util.fusion.QSConstants.TILE_ONTHEGO;
 
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -107,6 +108,7 @@ import com.android.systemui.quicksettings.VolumeTile;
 import com.android.systemui.quicksettings.WiFiTile;
 import com.android.systemui.quicksettings.WifiAPTile;
 import com.android.systemui.quicksettings.RebootTile;
+import com.android.systemui.quicksettings.OnTheGoTile;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -114,7 +116,7 @@ import java.util.HashSet;
 import java.util.List;
 
 public class QuickSettingsController {
-    private static String TAG = "QuickSettingsController";
+    private static final String TAG = "QuickSettingsController";
 
     // Stores the broadcast receivers and content observers
     // quick tiles register for.
@@ -260,6 +262,8 @@ public class QuickSettingsController {
                 qs = new ContactTile(mContext, this, findCustomKey(tile));
             } else if (tile.equals(TILE_INTERNALMEMORY)) {
                 qs = new InternalMemory(mContext, this);
+            } else if (tile.equals(TILE_ONTHEGO)) {
+                qs = new OnTheGoTile(mContext, this);     
             }
 
             if (qs != null) {
