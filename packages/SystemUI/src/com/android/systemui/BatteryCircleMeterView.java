@@ -316,6 +316,7 @@ public class BatteryCircleMeterView extends ImageView {
             mPaintSystem.setColor(systemColor);
         } else {
             mPaintSystem.setColor(mCircleColor);
+        }
 
         mRectLeft = null;
         mCircleSize = 0;
