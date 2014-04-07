@@ -25,16 +25,11 @@ import android.util.Xml;
 
 import com.android.internal.util.XmlUtils;
 
-import libcore.io.IoUtils;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import java.util.HashMap;
 
@@ -53,11 +48,12 @@ public final class SELinuxMMAC {
     private static final boolean DEBUG_POLICY_INSTALL = DEBUG_POLICY || false;
 
     // Signature seinfo values read from policy.
-    private static HashMap<Signature, Policy> sSigSeinfo =
-        new HashMap<Signature, Policy>();
+    private static final HashMap<Signature, String> sSigSeinfo =
+        new HashMap<Signature, String>();
 
-    // Default seinfo read from policy.
-    private static String sDefaultSeinfo = null;
+    // Package name seinfo values read from policy.
+    private static final HashMap<String, String> sPackageSeinfo =
+        new HashMap<String, String>();
 
     // Locations of potential install policy files.
     private static final File[] INSTALL_POLICY_FILE = {
@@ -65,52 +61,9 @@ public final class SELinuxMMAC {
         new File(Environment.getRootDirectory(), "etc/security/mac_permissions.xml"),
         null};
 
-    // Location of seapp_contexts policy file.
-    private static final String SEAPP_CONTEXTS_FILE = "/seapp_contexts";
-
-    // Stores the hash of the last used seapp_contexts file.
-    private static final String SEAPP_HASH_FILE =
-            Environment.getDataDirectory().toString() + "/system/seapp_hash";
-
-    // Signature policy stanzas
-    static class Policy {
-        private String seinfo;
-        private final HashMap<String, String> pkgMap;
-
-        Policy() {
-            seinfo = null;
-            pkgMap = new HashMap<String, String>();
-        }
-
-        void putSeinfo(String seinfoValue) {
-            seinfo = seinfoValue;
-        }
-
-        void putPkg(String pkg, String seinfoValue) {
-            pkgMap.put(pkg, seinfoValue);
-        }
-
-        // Valid policy stanza means there exists a global
-        // seinfo value or at least one package policy.
-        boolean isValid() {
-            return (seinfo != null) || (!pkgMap.isEmpty());
-        }
-
-        String checkPolicy(String pkgName) {
-            // Check for package name seinfo value first.
-            String seinfoValue = pkgMap.get(pkgName);
-            if (seinfoValue != null) {
-                return seinfoValue;
-            }
-
-            // Return the global seinfo value.
-            return seinfo;
-        }
-    }
-
     private static void flushInstallPolicy() {
         sSigSeinfo.clear();
-        sDefaultSeinfo = null;
+        sPackageSeinfo.clear();
     }
 
     /**
@@ -134,10 +87,6 @@ public final class SELinuxMMAC {
     }
 
     private static boolean readInstallPolicy(File[] policyFiles) {
-        // Temp structures to hold the rules while we parse the xml file.
-        // We add all the rules together once we know there's no structural problems.
-        HashMap<Signature, Policy> sigSeinfo = new HashMap<Signature, Policy>();
-        String defaultSeinfo = null;
 
         FileReader policyFile = null;
         int i = 0;
@@ -157,6 +106,8 @@ public final class SELinuxMMAC {
         }
 
         Slog.d(TAG, "Using install policy file " + policyFiles[i].getPath());
+
+        flushInstallPolicy();
 
         try {
             XmlPullParser parser = Xml.newPullParser();
@@ -187,82 +138,55 @@ public final class SELinuxMMAC {
                         XmlUtils.skipCurrentTag(parser);
                         continue;
                     }
-                    Policy policy = readPolicyTags(parser);
-                    if (policy.isValid()) {
-                        sigSeinfo.put(signature, policy);
+                    String seinfo = readSeinfoTag(parser);
+                    if (seinfo != null) {
+                        if (DEBUG_POLICY_INSTALL)
+                            Slog.i(TAG, "<signer> tag: (" + cert + ") assigned seinfo="
+                                   + seinfo);
+
+                        sSigSeinfo.put(signature, seinfo);
                     }
                 } else if ("default".equals(tagName)) {
-                    // Value is null if default tag is absent or seinfo tag is malformed.
-                    defaultSeinfo = readSeinfoTag(parser);
-                    if (DEBUG_POLICY_INSTALL)
-                        Slog.i(TAG, "<default> tag assigned seinfo=" + defaultSeinfo);
+                    String seinfo = readSeinfoTag(parser);
+                    if (seinfo != null) {
+                        if (DEBUG_POLICY_INSTALL)
+                            Slog.i(TAG, "<default> tag assigned seinfo=" + seinfo);
 
+                        // The 'null' signature is the default seinfo value
+                        sSigSeinfo.put(null, seinfo);
+                    }
+                } else if ("package".equals(tagName)) {
+                    String pkgName = parser.getAttributeValue(null, "name");
+                    if (pkgName == null) {
+                        Slog.w(TAG, "<package> without name at "
+                               + parser.getPositionDescription());
+                        XmlUtils.skipCurrentTag(parser);
+                        continue;
+                    }
+                    String seinfo = readSeinfoTag(parser);
+                    if (seinfo != null) {
+                        if (DEBUG_POLICY_INSTALL)
+                            Slog.i(TAG, "<package> tag: (" + pkgName +
+                                   ") assigned seinfo=" + seinfo);
+
+                        sPackageSeinfo.put(pkgName, seinfo);
+                    }
                 } else {
-                    XmlUtils.skipCurrentTag(parser);
-                }
-            }
-        } catch (XmlPullParserException e) {
-            // An error outside of a stanza means a structural problem
-            // with the xml file. So ignore it.
-            Slog.w(TAG, "Got exception parsing ", e);
-            return false;
-        } catch (IOException e) {
-            Slog.w(TAG, "Got exception parsing ", e);
-            return false;
-        } finally {
-            try {
-                policyFile.close();
-            } catch (IOException e) {
-                //omit
-            }
-        }
-
-        flushInstallPolicy();
-        sSigSeinfo = sigSeinfo;
-        sDefaultSeinfo = defaultSeinfo;
-
-        return true;
-    }
-
-    private static Policy readPolicyTags(XmlPullParser parser) throws
-            IOException, XmlPullParserException {
-
-        int type;
-        int outerDepth = parser.getDepth();
-        Policy policy = new Policy();
-        while ((type=parser.next()) != XmlPullParser.END_DOCUMENT
-               && (type != XmlPullParser.END_TAG
-                   || parser.getDepth() > outerDepth)) {
-            if (type == XmlPullParser.END_TAG
-                || type == XmlPullParser.TEXT) {
-                continue;
-            }
-
-            String tagName = parser.getName();
-            if ("seinfo".equals(tagName)) {
-                String seinfo = parseSeinfo(parser);
-                if (seinfo != null) {
-                    policy.putSeinfo(seinfo);
-                }
-                XmlUtils.skipCurrentTag(parser);
-            } else if ("package".equals(tagName)) {
-                String pkg = parser.getAttributeValue(null, "name");
-                if (!validatePackageName(pkg)) {
-                    Slog.w(TAG, "<package> without valid name at "
-                           + parser.getPositionDescription());
                     XmlUtils.skipCurrentTag(parser);
                     continue;
                 }
-
-                String seinfo = readSeinfoTag(parser);
-                if (seinfo != null) {
-                    policy.putPkg(pkg, seinfo);
-                }
-            } else {
-                XmlUtils.skipCurrentTag(parser);
             }
+        } catch (XmlPullParserException e) {
+            Slog.w(TAG, "Got execption parsing ", e);
+        } catch (IOException e) {
+            Slog.w(TAG, "Got execption parsing ", e);
         }
-        return policy;
+        try {
+            policyFile.close();
+        } catch (IOException e) {
+            //omit
+        }
+        return true;
     }
 
     private static String readSeinfoTag(XmlPullParser parser) throws
@@ -281,55 +205,17 @@ public final class SELinuxMMAC {
 
             String tagName = parser.getName();
             if ("seinfo".equals(tagName)) {
-                seinfo = parseSeinfo(parser);
+                String seinfoValue = parser.getAttributeValue(null, "value");
+                if (validateValue(seinfoValue)) {
+                    seinfo = seinfoValue;
+                } else {
+                    Slog.w(TAG, "<seinfo> without valid value at "
+                           + parser.getPositionDescription());
+                }
             }
             XmlUtils.skipCurrentTag(parser);
         }
         return seinfo;
-    }
-
-    private static String parseSeinfo(XmlPullParser parser) {
-
-        String seinfoValue = parser.getAttributeValue(null, "value");
-        if (!validateValue(seinfoValue)) {
-            Slog.w(TAG, "<seinfo> without valid value at "
-                   + parser.getPositionDescription());
-            seinfoValue = null;
-        }
-        return seinfoValue;
-    }
-
-    /**
-     * General validation routine for package names.
-     * Returns a boolean indicating if the passed string
-     * is a valid android package name.
-     */
-    private static boolean validatePackageName(String name) {
-        if (name == null)
-            return false;
-
-        final int N = name.length();
-        boolean hasSep = false;
-        boolean front = true;
-        for (int i=0; i<N; i++) {
-            final char c = name.charAt(i);
-            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                front = false;
-                continue;
-            }
-            if (!front) {
-                if ((c >= '0' && c <= '9') || c == '_') {
-                    continue;
-                }
-            }
-            if (c == '.') {
-                hasSep = true;
-                front = true;
-                continue;
-            }
-            return false;
-        }
-        return hasSep;
     }
 
     /**
@@ -359,11 +245,10 @@ public final class SELinuxMMAC {
      * The label is attached to the ApplicationInfo instance of the package.
      * @param PackageParser.Package object representing the package
      *         to labeled.
-     * @return boolean which determines whether a non null seinfo label
-     *         was assigned to the package. A null value simply meaning that
-     *         no policy matched.
+     * @return String holding the value of the seinfo label that was assigned.
+     *         Value may be null which indicates no seinfo label was assigned.
      */
-    public static boolean assignSeinfoValue(PackageParser.Package pkg) {
+    public static void assignSeinfoValue(PackageParser.Package pkg) {
 
         /*
          * Non system installed apps should be treated the same. This
@@ -379,113 +264,31 @@ public final class SELinuxMMAC {
                 if (s == null)
                     continue;
 
-                Policy policy = sSigSeinfo.get(s);
-                if (policy != null) {
-                    String seinfo = policy.checkPolicy(pkg.packageName);
-                    if (seinfo != null) {
-                        pkg.applicationInfo.seinfo = seinfo;
-                        if (DEBUG_POLICY_INSTALL)
-                            Slog.i(TAG, "package (" + pkg.packageName +
-                                   ") labeled with seinfo=" + seinfo);
+                if (sSigSeinfo.containsKey(s)) {
+                    String seinfo = pkg.applicationInfo.seinfo = sSigSeinfo.get(s);
+                    if (DEBUG_POLICY_INSTALL)
+                        Slog.i(TAG, "package (" + pkg.packageName +
+                               ") labeled with seinfo=" + seinfo);
 
-                        return true;
-                    }
+                    return;
                 }
+            }
+
+            // Check for seinfo labeled by package.
+            if (sPackageSeinfo.containsKey(pkg.packageName)) {
+                String seinfo = pkg.applicationInfo.seinfo = sPackageSeinfo.get(pkg.packageName);
+                if (DEBUG_POLICY_INSTALL)
+                    Slog.i(TAG, "package (" + pkg.packageName +
+                           ") labeled with seinfo=" + seinfo);
+                return;
             }
         }
 
         // If we have a default seinfo value then great, otherwise
         // we set a null object and that is what we started with.
-        pkg.applicationInfo.seinfo = sDefaultSeinfo;
+        String seinfo = pkg.applicationInfo.seinfo = sSigSeinfo.get(null);
         if (DEBUG_POLICY_INSTALL)
-            Slog.i(TAG, "package (" + pkg.packageName + ") labeled with seinfo="
-                   + (sDefaultSeinfo == null ? "null" : sDefaultSeinfo));
-
-        return (sDefaultSeinfo != null);
-    }
-
-    /**
-     * Determines if a recursive restorecon on /data/data and /data/user is needed.
-     * It does this by comparing the SHA-1 of the seapp_contexts file against the
-     * stored hash at /data/system/seapp_hash.
-     *
-     * @return Returns true if the restorecon should occur or false otherwise.
-     */
-    public static boolean shouldRestorecon() {
-        // Any error with the seapp_contexts file should be fatal
-        byte[] currentHash = null;
-        try {
-            currentHash = returnHash(SEAPP_CONTEXTS_FILE);
-        } catch (IOException ioe) {
-            Slog.e(TAG, "Error with hashing seapp_contexts.", ioe);
-            return false;
-        }
-
-        // Push past any error with the stored hash file
-        byte[] storedHash = null;
-        try {
-            storedHash = IoUtils.readFileAsByteArray(SEAPP_HASH_FILE);
-        } catch (IOException ioe) {
-            Slog.e(TAG, "Error opening " + SEAPP_HASH_FILE + ". Assuming first boot.", ioe);
-        }
-
-        return (storedHash == null || !MessageDigest.isEqual(storedHash, currentHash));
-    }
-
-    /**
-     * Stores the SHA-1 of the seapp_contexts to /data/system/seapp_hash.
-     */
-    public static void setRestoreconDone() {
-        try {
-            final byte[] currentHash = returnHash(SEAPP_CONTEXTS_FILE);
-            dumpHash(new File(SEAPP_HASH_FILE), currentHash);
-        } catch (IOException ioe) {
-            Slog.e(TAG, "Error with saving hash to " + SEAPP_HASH_FILE, ioe);
-        }
-    }
-
-    /**
-     * Dump the contents of a byte array to a specified file.
-     *
-     * @param file The file that receives the byte array content.
-     * @param content A byte array that will be written to the specified file.
-     * @throws IOException if any failed I/O operation occured.
-     *         Included is the failure to atomically rename the tmp
-     *         file used in the process.
-     */
-    private static void dumpHash(File file, byte[] content) throws IOException {
-        FileOutputStream fos = null;
-        File tmp = null;
-        try {
-            tmp = File.createTempFile("seapp_hash", ".journal", file.getParentFile());
-            tmp.setReadable(true);
-            fos = new FileOutputStream(tmp);
-            fos.write(content);
-            fos.getFD().sync();
-            if (!tmp.renameTo(file)) {
-                throw new IOException("Failure renaming " + file.getCanonicalPath());
-            }
-        } finally {
-            if (tmp != null) {
-                tmp.delete();
-            }
-            IoUtils.closeQuietly(fos);
-        }
-    }
-
-    /**
-     * Return the SHA-1 of a file.
-     *
-     * @param file The path to the file given as a string.
-     * @return Returns the SHA-1 of the file as a byte array.
-     * @throws IOException if any failed I/O operations occured.
-     */
-    private static byte[] returnHash(String file) throws IOException {
-        try {
-            final byte[] contents = IoUtils.readFileAsByteArray(file);
-            return MessageDigest.getInstance("SHA-1").digest(contents);
-        } catch (NoSuchAlgorithmException nsae) {
-            throw new RuntimeException(nsae);  // impossible
-        }
+            Slog.i(TAG, "package (" + pkg.packageName +
+                   ") labeled with seinfo=" + (seinfo == null ? "null" : seinfo));
     }
 }
