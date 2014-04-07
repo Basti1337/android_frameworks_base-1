@@ -16,7 +16,7 @@
  *
  */
 
-package com.android.internal.util.liquid;
+package com.android.internal.util.fusion;
 
 import android.content.Context;
 import android.content.Intent;
