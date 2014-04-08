@@ -712,7 +712,7 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
             // that this now covers, to improve scrolling speed.
             // That can't be done until the anim is complete though.
             if(Settings.System.getBoolean(
-                        mContext.getContentResolver(), Settings.System.CUSTOM_RECENT, false) == false) {
+                        mContext.getContentResolver(), Settings.System.RECENTS_USE_SLIM, false) == false) {
 
                 final int reflectionGap = 4;
                 int width = thumbnail.getWidth();
@@ -753,12 +753,12 @@ public class RecentsPanelView extends FrameLayout implements OnItemClickListener
                 if (mFitThumbnailToXY) {
                     h.thumbnailViewImage.setScaleType(ScaleType.FIT_XY);
                     if(Settings.System.getBoolean(
-                        mContext.getContentResolver(), Settings.System.CUSTOM_RECENT, false) == false) {
+                        mContext.getContentResolver(), Settings.System.RECENTS_USE_SLIM, false) == false) {
                         h.thumbnailViewImage.setRotationY(25.0f);
                     }
                 } else {
                     if(Settings.System.getBoolean(
-                        mContext.getContentResolver(), Settings.System.CUSTOM_RECENT, false) == false) {
+                        mContext.getContentResolver(), Settings.System.RECENTS_USE_SLIM, false) == false) {
                         h.thumbnailViewImage.setScaleType(ScaleType.FIT_CENTER);
                         h.thumbnailViewImage.setRotationY(25.0f);
                         if (DEBUG) Log.d(TAG, "thumbnail.getHeight(): " + thumbnail.getHeight());

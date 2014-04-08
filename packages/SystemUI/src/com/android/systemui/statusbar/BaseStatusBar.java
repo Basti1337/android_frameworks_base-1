@@ -280,7 +280,6 @@ public abstract class BaseStatusBar extends SystemUI implements
             mSlimRecentsEnabled = Settings.System.getIntForUser(
                     mContext.getContentResolver(), Settings.System.RECENTS_USE_SLIM,
                     0, UserHandle.USER_CURRENT) == 1;
-            update();
         }
     };
 
@@ -353,7 +352,8 @@ public abstract class BaseStatusBar extends SystemUI implements
                 Log.v(TAG, "OmniSwitch service stoped");
                 mOmniSwitchStarted = false;
             }
-        }
+          }
+       }
     };
 
     public void start() {
@@ -866,8 +866,7 @@ public abstract class BaseStatusBar extends SystemUI implements
                 if (mSlimRecentsEnabled) {
                     mSlimRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
                 } else {
-                    mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView(),
-                            mExpandedDesktopStyle);
+                    mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
                 }
             }
         }
