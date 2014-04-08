@@ -343,17 +343,17 @@ public abstract class BaseStatusBar extends SystemUI implements
                 mCurrentUserId = intent.getIntExtra(Intent.EXTRA_USER_HANDLE, -1);
                 if (true) Log.v(TAG, "userId " + mCurrentUserId + " is in the house");
                 userSwitched(mCurrentUserId);
-                if (mPieController != null) {
-                    mPieController.refreshContainer();
             } else if (OmniSwitchConstants.ACTION_SERVICE_START.equals(action)) {
                 Log.v(TAG, "OmniSwitch service started");
                 mOmniSwitchStarted = true;
             } else if (OmniSwitchConstants.ACTION_SERVICE_STOP.equals(action)) {
                 Log.v(TAG, "OmniSwitch service stoped");
                 mOmniSwitchStarted = false;
+            if (mPieController != null) {
+                mPieController.refreshContainer();
+                }
             }
-          }
-       }
+        }
     };
 
     public void start() {
