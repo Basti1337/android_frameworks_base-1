@@ -3109,13 +3109,6 @@ public final class Settings {
         public static final String ALLOW_MULTIUSER = "allow_multiuser";
 
         /**
-         * Custom Recent Control
-         *
-         * @hide
-         */
-        public static final String CUSTOM_RECENT = "custom_recent";
-
-        /**
          * Whether to show the IME switcher in the status bar
          * @hide
          */
@@ -3485,6 +3478,18 @@ public final class Settings {
          * @hide
          */
         public static final String CUSTOM_TOGGLE_ACTIONS = "custom_toggle_actions";
+
+        /**
+         * Alternative recent apps integration using Slim recents
+         * @hide
+         */
+        public static final String RECENTS_USE_SLIM = "recents_use_slim";
+
+        /**
+         * Alternative recent apps integration using OmniSwitch
+         * @hide
+         */
+        public static final String RECENTS_USE_OMNISWITCH = "recents_use_omniswitch";
 
         /**
          * Parsed booleans from string for infinite toggles (unlock/collapse-shade/match-icon)

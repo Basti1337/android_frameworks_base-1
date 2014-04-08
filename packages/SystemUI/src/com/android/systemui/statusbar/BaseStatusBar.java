@@ -104,6 +104,7 @@ import com.android.internal.statusbar.StatusBarIconList;
 import com.android.internal.widget.SizeAdaptiveLayout;
 import com.android.internal.util.fusion.DeviceUtils;
 import com.android.internal.util.fusion.ButtonConfig;
+import com.android.internal.util.fusion.OmniSwitchConstants;
 import com.android.systemui.R;
 import com.android.systemui.SearchPanelView;
 import com.android.systemui.RecentsComponent;
@@ -174,10 +175,6 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     protected FrameLayout mStatusBarContainer;
 
-    private RecentController cRecents;
-
-    private RecentsComponent mRecents;
-
     protected int mLayoutDirection = -1; // invalid
     private Locale mLocale;
     protected boolean mUseHeadsUp = false;
@@ -243,10 +240,11 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     private boolean mDeviceProvisioned = false;
 
-    private boolean mCustomRecent = false;
-
     protected AppSidebar mAppSidebar;
     protected int mSidebarPosition;
+
+    private RecentsComponent mRecents;
+    private RecentController mSlimRecents;
 
     private boolean mShowNotificationCounts;
 
@@ -254,6 +252,10 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     @ChaosLab(name="GestureAnywhere", classification=Classification.NEW_FIELD)
     protected GestureAnywhereView mGestureAnywhereView;
+
+    private boolean mOmniSwitchEnabled;
+    private boolean mOmniSwitchStarted;
+    private boolean mSlimRecentsEnabled;
 
     public IStatusBarService getStatusBarService() {
         return mBarService;
@@ -263,7 +265,7 @@ public abstract class BaseStatusBar extends SystemUI implements
         return mDeviceProvisioned;
     }
 
-    private ContentObserver mProvisioningObserver = new ContentObserver(mHandler) {
+    private ContentObserver mSettingsObserver = new ContentObserver(mHandler) {
         @Override
         public void onChange(boolean selfChange) {
             final boolean provisioned = 0 != Settings.Global.getInt(
@@ -272,6 +274,13 @@ public abstract class BaseStatusBar extends SystemUI implements
                 mDeviceProvisioned = provisioned;
                 updateNotificationIcons();
             }
+            mOmniSwitchEnabled = Settings.System.getIntForUser(
+                    mContext.getContentResolver(), Settings.System.RECENTS_USE_OMNISWITCH,
+                    0, UserHandle.USER_CURRENT) == 1;
+            mSlimRecentsEnabled = Settings.System.getIntForUser(
+                    mContext.getContentResolver(), Settings.System.RECENTS_USE_SLIM,
+                    0, UserHandle.USER_CURRENT) == 1;
+            update();
         }
     };
 
@@ -337,7 +346,12 @@ public abstract class BaseStatusBar extends SystemUI implements
                 userSwitched(mCurrentUserId);
                 if (mPieController != null) {
                     mPieController.refreshContainer();
-                }
+            } else if (OmniSwitchConstants.ACTION_SERVICE_START.equals(action)) {
+                Log.v(TAG, "OmniSwitch service started");
+                mOmniSwitchStarted = true;
+            } else if (OmniSwitchConstants.ACTION_SERVICE_STOP.equals(action)) {
+                Log.v(TAG, "OmniSwitch service stoped");
+                mOmniSwitchStarted = false;
             }
         }
     };
@@ -351,25 +365,32 @@ public abstract class BaseStatusBar extends SystemUI implements
                 ServiceManager.checkService(DreamService.DREAM_SERVICE));
         mPowerManager = (PowerManager) mContext.getSystemService(Context.POWER_SERVICE);
 
-        mProvisioningObserver.onChange(false); // set up
+        mSettingsObserver.onChange(false); // set up
         mContext.getContentResolver().registerContentObserver(
                 Settings.Global.getUriFor(Settings.Global.DEVICE_PROVISIONED), true,
-                mProvisioningObserver);
+
+                mSettingsObserver);
+        mContext.getContentResolver().registerContentObserver(
+                Settings.System.getUriFor(Settings.System.RECENTS_USE_OMNISWITCH), true,
+                mSettingsObserver, UserHandle.USER_ALL);
+
+        mContext.getContentResolver().registerContentObserver(
+                Settings.System.getUriFor(Settings.System.RECENTS_USE_SLIM), true,
+                mSettingsObserver, UserHandle.USER_ALL);
 
         mBarService = IStatusBarService.Stub.asInterface(
                 ServiceManager.getService(Context.STATUS_BAR_SERVICE));
 
-        mCustomRecent = Settings.System.getBoolean(
-                        mContext.getContentResolver(), Settings.System.CUSTOM_RECENT, false);
-
-        if(mCustomRecent){
-            cRecents = new RecentController(mContext, mLayoutDirection);
-        }else{
-            mRecents = getComponent(RecentsComponent.class);
-        }
-
+        mRecents = getComponent(RecentsComponent.class);
+		
         mLocale = mContext.getResources().getConfiguration().locale;
         mLayoutDirection = TextUtils.getLayoutDirectionFromLocale(mLocale);
+
+        if (mSlimRecentsEnabled) {
+            mSlimRecents = new RecentController(mContext, mLayoutDirection);
+        } else {
+            mRecents = getComponent(RecentsComponent.class);
+        }
 
         mShowNotificationCounts = Settings.System.getInt(mContext.getContentResolver(),
                 Settings.System.STATUS_BAR_NOTIFICATION_COUNT, 0) == 1;
@@ -439,6 +460,8 @@ public abstract class BaseStatusBar extends SystemUI implements
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_USER_SWITCHED);
+        filter.addAction(OmniSwitchConstants.ACTION_SERVICE_START);
+        filter.addAction(OmniSwitchConstants.ACTION_SERVICE_STOP);
         mContext.registerReceiver(mBroadcastReceiver, filter);
         SidebarObserver observer = new SidebarObserver(mHandler);
         observer.observe();
@@ -835,54 +858,64 @@ public abstract class BaseStatusBar extends SystemUI implements
     };
 
     protected void toggleRecentsActivity() {
-        if (mRecents != null || cRecents != null) {
-        mCustomRecent = Settings.System.getBoolean(mContext.getContentResolver(), 
-                        Settings.System.CUSTOM_RECENT, false);
-        if(mCustomRecent)
-            cRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
-        else
-            mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
+        if (mOmniSwitchEnabled && mOmniSwitchStarted) {
+            Intent showIntent = new Intent(OmniSwitchConstants.ACTION_TOGGLE_OVERLAY);
+            mContext.sendBroadcast(showIntent);
+        } else {
+            if (mRecents != null || mSlimRecents != null) {
+                if (mSlimRecentsEnabled) {
+                    mSlimRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView());
+                } else {
+                    mRecents.toggleRecents(mDisplay, mLayoutDirection, getStatusBarView(),
+                            mExpandedDesktopStyle);
+                }
+            }
         }
     }
 
     protected void preloadRecentTasksList() {
-        if (mRecents != null || cRecents != null) {
-        mCustomRecent = Settings.System.getBoolean(mContext.getContentResolver(), 
-                        Settings.System.CUSTOM_RECENT, false);
-        if(mCustomRecent)
-            cRecents.preloadRecentTasksList();
-        else
-            mRecents.preloadRecentTasksList();
+        if (!mOmniSwitchEnabled) {
+            if (mRecents != null || mSlimRecents != null) {
+                if (mSlimRecentsEnabled) {
+                    mSlimRecents.preloadRecentTasksList();
+                } else {
+                    mRecents.preloadRecentTasksList();
+                }
+            }
         }
     }
 
     protected void cancelPreloadingRecentTasksList() {
-        if (mRecents != null || cRecents != null) {
-        mCustomRecent = Settings.System.getBoolean(mContext.getContentResolver(), 
-                        Settings.System.CUSTOM_RECENT, false);
-        if(mCustomRecent)
-            cRecents.cancelPreloadingRecentTasksList();
-        else
-            mRecents.cancelPreloadingRecentTasksList();            
+        if (!mOmniSwitchEnabled) {
+            if (mRecents != null || mSlimRecents != null) {
+                if (mSlimRecentsEnabled) {
+                    mSlimRecents.cancelPreloadingRecentTasksList();
+                } else {
+                    mRecents.cancelPreloadingRecentTasksList();
+                }
+            }
         }
     }
 
     protected void closeRecents() {
-        if (mRecents != null || cRecents != null) {
-        mCustomRecent = Settings.System.getBoolean(mContext.getContentResolver(), 
-                        Settings.System.CUSTOM_RECENT, false);
-        if(mCustomRecent)
-            cRecents.closeRecents();
-        else
-            mRecents.closeRecents();    
+        if (mOmniSwitchEnabled && mOmniSwitchStarted) {
+            Intent hideIntent = new Intent(OmniSwitchConstants.ACTION_HIDE_OVERLAY);
+            mContext.sendBroadcast(hideIntent);
+        } else {
+            if (mRecents != null || mSlimRecents != null) {
+                if (mSlimRecentsEnabled) {
+                    mSlimRecents.closeRecents();
+                } else {
+                    mRecents.closeRecents();
+                }
+            }
         }
     }
 
     protected void rebuildRecentsScreen() {
-        mCustomRecent = Settings.System.getBoolean(mContext.getContentResolver(), 
-                        Settings.System.CUSTOM_RECENT, false);   
-        if (cRecents != null && mCustomRecent)   
-                cRecents.rebuildRecentsScreen();
+        if (mSlimRecents != null && mSlimRecentsEnabled) {
+            mSlimRecents.rebuildRecentsScreen();
+        }
     }
 
     public abstract void resetHeadsUpDecayTimer();
