@@ -141,7 +141,6 @@ import com.android.systemui.statusbar.policy.LocationController;
 import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.NotificationRowLayout;
 import com.android.systemui.statusbar.policy.OnSizeChangedListener;
-import com.android.systemui.statusbar.policy.RotationLockController;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -217,7 +216,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     BatteryController mBatteryController;
     LocationController mLocationController;
     NetworkController mNetworkController;
-    RotationLockController mRotationLockController;
 
     int mNaturalBarHeight = -1;
     int mIconSize = -1;
@@ -1028,6 +1026,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         mCurrUiThemeMode = mContext.getResources().getConfiguration().uiThemeMode;
         mCurrentDensity = mContext.getResources().getConfiguration().densityDpi;
 
+        mLocationController = new LocationController(mContext); // will post a notification
+        mBatteryController = new BatteryController(mContext);
+        mNetworkController = new NetworkController(mContext);
+        mBluetoothController = new BluetoothController(mContext);
+
         super.start(); // calls createAndAddWindows()
 
         addNavigationBar();
@@ -1384,11 +1387,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         setAreThereNotifications();
 
         // Other icons
-        mLocationController = new LocationController(mContext); // will post a notification
-        mBatteryController = new BatteryController(mContext);
-        mNetworkController = new NetworkController(mContext);
-        mBluetoothController = new BluetoothController(mContext);
-        mRotationLockController = new RotationLockController(mContext);
         final SignalClusterView signalCluster =
                 (SignalClusterView)mStatusBarView.findViewById(R.id.signal_cluster);
 
