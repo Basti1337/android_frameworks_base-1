@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.internal.util.chaos.identicons;
+package com.android.internal.util.fusion.identicons;
 
 import android.annotation.ChaosLab;
 import android.annotation.ChaosLab.Classification;
