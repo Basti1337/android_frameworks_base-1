@@ -261,4 +261,7 @@
     <string name="wifi_ap_disabled">WiFi AP disabled</string>
     <string name="wifi_ap_enabled">WiFi AP enabled</string>
 
+    <!-- Navigation bar IME navigation -->
+    <string name="accessibility_ime_navigation_left">Cursor left</string>
+    <string name="accessibility_ime_navigation_right">Cursor right</string>
 </resources>
