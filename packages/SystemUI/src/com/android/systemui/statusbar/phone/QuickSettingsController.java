@@ -143,21 +143,21 @@ public class QuickSettingsController {
     private ContentObserver mObserver;
     public PhoneStatusBar mStatusBarService;
     private final String mSettingsKey;
-    private boolean mHideLiveTiles;
-    private boolean mHideLiveTileLabels;
+    private final boolean mRibbonMode;
 
     private InputMethodTile mIMETile;
 
     private static final int MSG_UPDATE_TILES = 1000;
 
     public QuickSettingsController(Context context, QuickSettingsContainerView container,
-            PhoneStatusBar statusBarService, String settingsKey) {
+            PhoneStatusBar statusBarService, String settingsKey,  boolean ribbonMode) {
         mContext = context;
         mContainerView = container;
         mHandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
                 super.handleMessage(msg);
+
                 switch (msg.what) {
                     case MSG_UPDATE_TILES:
                         setupQuickSettings();
@@ -168,6 +168,7 @@ public class QuickSettingsController {
         mStatusBarService = statusBarService;
         mQuickSettingsTiles = new ArrayList<QuickSettingsTile>();
         mSettingsKey = settingsKey;
+        mRibbonMode = ribbonMode;
     }
 
     void loadTiles() {
@@ -280,7 +281,7 @@ public class QuickSettingsController {
             }
         }
 
-        if (mHideLiveTiles) {
+        if (mRibbonMode) {
             return;
         }
 
@@ -350,9 +351,9 @@ public class QuickSettingsController {
         loadTiles();
         setupBroadcastReceiver();
         setupContentObserver();
-        if (mHideLiveTileLabels) {
+        if (mRibbonMode) {
             for (QuickSettingsTile t : mQuickSettingsTiles) {
-                t.setLabelVisibility(false);
+                t.switchToRibbonMode();
             }
         }
     }
@@ -456,19 +457,5 @@ public class QuickSettingsController {
         for (QuickSettingsTile t : mQuickSettingsTiles) {
             t.updateResources();
         }
-    }
-
-    public void setTileTitleVisibility(boolean visible) {
-        for (QuickSettingsTile t : mQuickSettingsTiles) {
-            t.setLabelVisibility(visible);
-        }
-    }
-
-    public void hideLiveTileLabels(boolean hide) {
-        mHideLiveTileLabels = hide;
-    }
-
-    public void hideLiveTiles(boolean hide) {
-        mHideLiveTiles = hide;
     }
 }
