@@ -1987,10 +1987,12 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 try {
                     context = context.createPackageContext(packageName, 0);
                     context.setTheme(theme);
+                } catch (PackageManager.NameNotFoundException e) {
+                    // Ignore
                 }
-            } catch (PackageManager.NameNotFoundException e) {
-                // Ignore
             }
+
+            // Construct the Toast
 
             Window win = PolicyManager.makeNewWindow(context);
             final TypedArray ta = win.getWindowStyle();
